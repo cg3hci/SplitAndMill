@@ -1,0 +1,3 @@
+[submodule "cg3lib"]
+	path = cg3lib
+	url = http://github.com/cg3hci/cg3lib.git
