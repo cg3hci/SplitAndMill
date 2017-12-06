@@ -1,80 +1,112 @@
-///Test cg3 core module
+//If core defined
 #ifdef CG3_CORE_DEFINED
-#include <cg3/data_structures/arrays.h>
-#include <cg3/geometry/bounding_box.h>
-#include <cg3/utilities/comparators.h>
-#include <cg3/utilities/timer.h>
-#endif
 
-///Test cg3 viewer module
+//Viewer defined
 #ifdef CG3_VIEWER_DEFINED
-#include <cg3/viewer/interfaces/drawable_object.h>
-#include <cg3/viewer/interfaces/pickable_object.h>
 #include <cg3/viewer/mainwindow.h>
 #include <cg3/viewer/managers/window_manager/window_manager.h>
-#endif
 
-///Test cg3 dcel module
+//DCEL module defined
 #ifdef CG3_DCEL_DEFINED
-#include <cg3/meshes/dcel/dcel.h>
-//dcel manager
-#ifdef CG3_VIEWER_DEFINED
 #include <cg3/viewer/managers/dcel_manager/dcel_manager.h>
 #endif
-#endif
 
-//Test eigenmesh module
+//Eigenmesh module defined
 #ifdef CG3_EIGENMESH_DEFINED
-#include <cg3/meshes/eigenmesh/eigenmesh.h>
-///Test trimeshviewer.pri: uncomment to test trimesh module
-#ifdef CG3_VIEWER_DEFINED
 #include <cg3/viewer/managers/eigenmesh_manager/eigenmesh_manager.h>
+
+//CGAL and LIBIGL defined
 #ifdef CG3_CGAL_DEFINED
 #ifdef CG3_LIBIGL_DEFINED
 #include <cg3/viewer/managers/booleans_manager/booleans_manager.h>
 #endif
 #endif
 #endif
+
+//If viewer not defined
+#else
+#include <iostream>
+#define CG3_SUPPRESS_WARNING(p) (void)p
+#endif
+
+//If core not defined
+#else
+#include <iostream>
+#define CG3_SUPPRESS_WARNING(p) (void)p
 #endif
 
 int main(int argc, char *argv[]) {
 
-    ///Test viewer.pri:
-    #ifdef CG3_VIEWER_DEFINED
+    CG3_SUPPRESS_WARNING(argc);
+    CG3_SUPPRESS_WARNING(argv);
+
+//If cg3 is not included
+#ifdef CG3_CORE_DEFINED
+
+//If viewer module is included
+#ifdef CG3_VIEWER_DEFINED
+
     QApplication app(argc, argv);
+    MainWindow gui;  //Main window, it contains QGLViewer canvas
 
-    MainWindow gui;  // finestra principale, contiene la canvas di QGLViewer
+    //Add window manager
+    WindowManager wm(&gui);
+    int idMainWindow = gui.addManager(&wm, "Window");
+    CG3_SUPPRESS_WARNING(idMainWindow);
 
+//If EigenMesh module is included
+#ifdef CG3_EIGENMESH_DEFINED
 
-    WindowManager wm(&gui); // Creo un window manager e lo aggiungo alla mainwindow
-    int id = gui.addManager(&wm, "Window");
-
-    //Test eigenmeshmanager.pri
-    #ifdef CG3_EIGENMESH_DEFINED
+    //Add EigenMesh manager
     EigenMeshManager em(&gui);
-    id = gui.addManager(&em, "EigenMesh");
+    int idEigen = gui.addManager(&em, "EigenMesh");
+    CG3_SUPPRESS_WARNING(idEigen);
 
 
-    //Test booleansmanager.pri
-    #if defined(CG3_LIBIGL_DEFINED) && defined(CG3_CGAL_DEFINED)
+//If LIBIGL and CGAL are included
+#if defined(CG3_LIBIGL_DEFINED) && defined(CG3_CGAL_DEFINED)
+
+    //Add boolean manager
     BooleansManager bm(&gui);
-    id = gui.addManager(&bm, "Booleans");
-    #endif
-    #endif
+    int idBoolean = gui.addManager(&bm, "Booleans");
 
-    //Test dcelmanager.pri
-    #ifdef CG3_DCEL_DEFINED
+#endif
+
+#endif
+
+//If DCEL module is included
+#ifdef CG3_DCEL_DEFINED
+
+    //Add DCEL manager
     DcelManager dm(&gui);
-    id = gui.addManager(&dm, "Dcel");
-    #endif
+    int idDcel = gui.addManager(&dm, "Dcel");
+    CG3_SUPPRESS_WARNING(idDcel);
 
-    gui.setCurrentIndexToolBox(id); // il window manager sarà quello visualizzato di default
+#endif
+
+    //Set the window manager as the default one
+    gui.setCurrentIndexToolBox(idMainWindow);
+
+    //Show the GUI
     gui.updateGlCanvas();
     gui.show();
 
     return app.exec();
-    #else
-    std::cout << "Hello World!" << std::endl;
+
+//If viewer module is not included
+#else
+
+    std::cout << "Impossible to open the window: the module ''viewer'' has not been included." << std::endl;
     return 0;
-    #endif
+
+#endif
+
+//If cg3 core is not included
+#else
+
+    std::cout << "Impossible to load the library cg3: the module ''core'' has not been included." << std::endl;
+    return 0;
+
+#endif
+
 }
