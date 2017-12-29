@@ -4,7 +4,6 @@
 //Viewer defined
 #ifdef CG3_VIEWER_DEFINED
 #include <cg3/viewer/mainwindow.h>
-#include <cg3/viewer/managers/window_manager/window_manager.h>
 
 //DCEL module defined
 #ifdef CG3_DCEL_DEFINED
@@ -49,11 +48,6 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     MainWindow gui;  //Main window, it contains QGLViewer canvas
 
-    //Add window manager
-    WindowManager wm(&gui);
-    int idMainWindow = gui.addManager(&wm, "Window");
-    CG3_SUPPRESS_WARNING(idMainWindow);
-
 //If EigenMesh module is included
 #ifdef CG3_EIGENMESH_DEFINED
 
@@ -69,7 +63,7 @@ int main(int argc, char *argv[]) {
     //Add boolean manager
     BooleansManager bm(&gui);
     int idBoolean = gui.addManager(&bm, "Booleans");
-
+    CG3_SUPPRESS_WARNING(idBoolean);
 #endif
 
 #endif
@@ -85,7 +79,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     //Set the window manager as the default one
-    gui.setCurrentIndexToolBox(idMainWindow);
+    gui.setCurrentIndexToolBox(0);
 
     //Show the GUI
     gui.updateGlCanvas();
