@@ -41,6 +41,7 @@ CONFIG += c++11
 #
 # Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_DCEL
 CONFIG += CG3_CORE
+#CONFIG += USE_LIBIGL_EIGEN #configuration for libigl in case of conflict with eigen
 
 # Include the chosen modules
 include (cg3lib/cg3.pri)

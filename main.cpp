@@ -7,17 +7,17 @@
 
 //DCEL module defined
 #ifdef CG3_DCEL_DEFINED
-#include <cg3/viewer/managers/dcel_manager/dcel_manager.h>
+#include <cg3/viewer/managers/dcel_manager.h>
 #endif
 
 //Eigenmesh module defined
 #ifdef CG3_EIGENMESH_DEFINED
-#include <cg3/viewer/managers/eigenmesh_manager/eigenmesh_manager.h>
+#include <cg3/viewer/managers/eigenmesh_manager.h>
 
 //CGAL and LIBIGL defined
 #ifdef CG3_CGAL_DEFINED
 #ifdef CG3_LIBIGL_DEFINED
-#include <cg3/viewer/managers/booleans_manager/booleans_manager.h>
+#include <cg3/viewer/managers/booleans_manager.h>
 #endif
 #endif
 #endif
@@ -46,13 +46,13 @@ int main(int argc, char *argv[]) {
 #ifdef CG3_VIEWER_DEFINED
 
     QApplication app(argc, argv);
-    MainWindow gui;  //Main window, it contains QGLViewer canvas
+    cg3::viewer::MainWindow gui;  //Main window, it contains QGLViewer canvas
 
 //If EigenMesh module is included
 #ifdef CG3_EIGENMESH_DEFINED
 
     //Add EigenMesh manager
-    EigenMeshManager em(&gui);
+    cg3::viewer::EigenMeshManager em(&gui);
     int idEigen = gui.addManager(&em, "EigenMesh");
     CG3_SUPPRESS_WARNING(idEigen);
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 #if defined(CG3_LIBIGL_DEFINED) && defined(CG3_CGAL_DEFINED)
 
     //Add boolean manager
-    BooleansManager bm(&gui);
+    cg3::viewer::BooleansManager bm(&gui);
     int idBoolean = gui.addManager(&bm, "Booleans");
     CG3_SUPPRESS_WARNING(idBoolean);
 #endif
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 #ifdef CG3_DCEL_DEFINED
 
     //Add DCEL manager
-    DcelManager dm(&gui);
+    cg3::viewer::DcelManager dm(&gui);
     int idDcel = gui.addManager(&dm, "Dcel");
     CG3_SUPPRESS_WARNING(idDcel);
 
