@@ -32,14 +32,13 @@ CONFIG += c++11
 #   CG3_DATA_STRUCTURES     -- Various data structure
 #   CG3_ALGORITHMS          -- Various algorithms
 #
-#   CG3_DCEL                -- Dcel data structure
-#   CG3_EIGENMESH           -- Eigen mesh data structure
+#   CG3_MESHES              -- Mesh data structures
 #
 #   CG3_CGAL                -- CGAL interface
 #   CG3_LIBIGL              -- libIGL interface
 #   CG3_CINOLIB             -- CinoLib interface
 #
-# Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_DCEL
+# Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_MESHES
 CONFIG += CG3_CORE
 
 # Include the chosen modules
