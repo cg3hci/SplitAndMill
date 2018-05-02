@@ -79,10 +79,10 @@ int main(int argc, char *argv[]) {
 #endif
 
     //Set the window manager as the default one
-    gui.setCurrentIndexToolBox(0);
+    gui.setCurrentManager(0);
 
     //Show the GUI
-    gui.updateGlCanvas();
+    gui.canvas.update();
     gui.show();
 
     return app.exec();
