@@ -12,8 +12,9 @@
 ManipulableSphere::ManipulableSphere() :
 	center(), radius(0.01), color(cg3::BLUE), colorHighlited(cg3::RED)
 {
-	  setRotationSensitivity(0);
+	  //setRotationSensitivity(0);
 	  setWheelSensitivity(0);
+	  //setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::TRANSLATE);
 }
 
 void ManipulableSphere::setRadius(double d)
@@ -40,3 +41,5 @@ double ManipulableSphere::sceneRadius() const
 {
 	return radius;
 }
+
+

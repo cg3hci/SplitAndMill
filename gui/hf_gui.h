@@ -30,6 +30,20 @@ public:
 private slots:
 	void on_loadMeshPushButton_clicked();
 
+	void on_resetBoxPushButton_clicked();
+
+	void on_pxRadioButton_toggled(bool checked);
+
+	void on_pyRadioButton_toggled(bool checked);
+
+	void on_pzRadioButton_toggled(bool checked);
+
+	void on_mxRadioButton_toggled(bool checked);
+
+	void on_myRadioButton_toggled(bool checked);
+
+	void on_mzRadioButton_toggled(bool checked);
+
 private:
 	Ui::HFGui *ui;
 

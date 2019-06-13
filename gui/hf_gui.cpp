@@ -40,3 +40,58 @@ void HFGui::on_loadMeshPushButton_clicked()
 		}
 	}
 }
+
+void HFGui::on_resetBoxPushButton_clicked()
+{
+	qglviewer::Quaternion q;
+	box.setRotation(q);
+	mw.canvas.update();
+}
+
+void HFGui::on_pxRadioButton_toggled(bool checked)
+{
+	if (checked){
+		box.setMillingDirection(ManipulableBoundingBox::PLUS_X);
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_pyRadioButton_toggled(bool checked)
+{
+	if (checked){
+		box.setMillingDirection(ManipulableBoundingBox::PLUS_Y);
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_pzRadioButton_toggled(bool checked)
+{
+	if (checked){
+		box.setMillingDirection(ManipulableBoundingBox::PLUS_Z);
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_mxRadioButton_toggled(bool checked)
+{
+	if (checked){
+		box.setMillingDirection(ManipulableBoundingBox::MINUS_X);
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_myRadioButton_toggled(bool checked)
+{
+	if (checked){
+		box.setMillingDirection(ManipulableBoundingBox::MINUS_Y);
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_mzRadioButton_toggled(bool checked)
+{
+	if (checked){
+		box.setMillingDirection(ManipulableBoundingBox::MINUS_Z);
+		mw.canvas.update();
+	}
+}
