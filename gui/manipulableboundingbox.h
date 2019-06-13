@@ -14,7 +14,7 @@
 class ManipulableBoundingBox : public cg3::ManipulableObject
 {
 public:
-	typedef enum {PLUS_X, PLUS_Y, PLUS_Z, MINUS_X, MINUS_Y, MINUS_Z} MillingDir;
+	typedef enum {PLUS_X = 0, PLUS_Y, PLUS_Z, MINUS_X, MINUS_Y, MINUS_Z} MillingDir;
 	ManipulableBoundingBox();
 	virtual ~ManipulableBoundingBox(){};
 
@@ -28,8 +28,9 @@ public:
 
 	void set(const cg3::Pointd& min, const cg3::Pointd& max);
 	void setMillingDirection(MillingDir dir);
-	const ManipulableSphere& min() const {return _min;}
-	const ManipulableSphere& max() const {return _max;}
+	MillingDir millingDirection() const {return millingDir;};
+	cg3::Pointd min() const {return _min.position();}
+	cg3::Pointd max() const {return _max.position();}
 
 protected:
 	void drawSpheres() const;

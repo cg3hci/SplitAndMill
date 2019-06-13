@@ -7,6 +7,9 @@
 #include "hf_gui.h"
 #include "ui_hf_gui.h"
 
+#include <cg3/algorithms/global_optimal_rotation_matrix.h>
+#include <cg3/algorithms/sphere_coverage.h>
+
 HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
@@ -29,9 +32,12 @@ void HFGui::on_loadMeshPushButton_clicked()
 	std::string filename = lsmesh.loadDialog("Load Mesh");
 	if (filename != ""){
 		if(mesh.loadFromFile(filename)){
+			mesh.translate(-mesh.boundingBox().center());
+			mesh.update();
 			mw.pushDrawableObject(&mesh, "Loaded Mesh");
 			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 			mw.pushDrawableObject(&box, "box");
+			treeMesh = cg3::cgal::AABBTree(mesh);
 
 			//mw.pushDrawableObject(&box.min(), "min");
 			//mw.pushDrawableObject(&box.max(), "max");
@@ -94,4 +100,32 @@ void HFGui::on_mzRadioButton_toggled(bool checked)
 		box.setMillingDirection(ManipulableBoundingBox::MINUS_Z);
 		mw.canvas.update();
 	}
+}
+
+void HFGui::on_containedTrisPushButton_clicked()
+{
+	mesh.setColor(cg3::GREY);
+	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
+	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox(box.min(), box.max()));
+	for(const cg3::Dcel::Face* f : lf){
+		if (f->normal().dot(dir) >= -cg3::EPSILON)
+			mesh.face(f->id())->setColor(cg3::GREEN);
+		else
+			mesh.face(f->id())->setColor(cg3::RED);
+	}
+	mesh.update();
+	mw.canvas.update();
+}
+
+void HFGui::on_optimalOrientationPushButton_clicked()
+{
+	uint nDirs = ui->nDirsSpinBox->value();
+	std::vector<cg3::Vec3> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
+	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
+	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
+	mesh.rotate(rot);
+	//box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
+	treeMesh = cg3::cgal::AABBTree(mesh);
+	mesh.update();
+	mw.canvas.update();
 }

@@ -16,6 +16,7 @@ ManipulableBoundingBox::ManipulableBoundingBox() :
 	_min.setReferenceFrame(this);
 	_max.setReferenceFrame(this);
 	setWheelSensitivity(0);
+	setRotationSensitivity(0);
 	setGrabbingFactor(0.05);
 }
 

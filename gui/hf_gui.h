@@ -12,6 +12,7 @@
 
 #include <cg3/viewer/drawable_objects/drawable_dcel.h>
 #include <cg3/viewer/utilities/loadersaver.h>
+#include <cg3/cgal/aabbtree.h>
 
 #include "manipulableboundingbox.h"
 
@@ -44,6 +45,10 @@ private slots:
 
 	void on_mzRadioButton_toggled(bool checked);
 
+	void on_containedTrisPushButton_clicked();
+
+	void on_optimalOrientationPushButton_clicked();
+
 private:
 	Ui::HFGui *ui;
 
@@ -52,6 +57,8 @@ private:
 	cg3::viewer::LoaderSaver lsmesh;
 
 	cg3::DrawableDcel mesh;
+	cg3::cgal::AABBTree treeMesh;
+
 	ManipulableBoundingBox box;
 };
 
