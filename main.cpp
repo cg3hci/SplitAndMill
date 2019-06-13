@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 	HFGui man(&gui);
 	gui.addManager(&man, "HF Decomposition");
 
-    //Show the GUI
+	//Show the GUI
     gui.canvas.update();
     gui.show();
 

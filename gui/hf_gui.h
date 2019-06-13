@@ -32,6 +32,8 @@ public:
 private slots:
 	void on_loadMeshPushButton_clicked();
 
+	void on_clearPushButton_clicked();
+
 	void on_resetBoxPushButton_clicked();
 
 	void on_pxRadioButton_toggled(bool checked);
@@ -51,6 +53,8 @@ private slots:
 	void on_optimalOrientationPushButton_clicked();
 
 	void on_cutPushButton_clicked();
+
+	void on_manualRotationPushButton_clicked();
 
 private:
 	Ui::HFGui *ui;

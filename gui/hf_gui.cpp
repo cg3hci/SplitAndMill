@@ -51,6 +51,16 @@ void HFGui::on_loadMeshPushButton_clicked()
 	}
 }
 
+void HFGui::on_clearPushButton_clicked()
+{
+	mw.deleteDrawableObject(&mesh);
+	mw.deleteDrawableObject(&box);
+	mw.deleteDrawableObject(&hfDecomposition);
+	hfDecomposition.clear();
+	hfDirs.clear();
+	mw.canvas.update();
+}
+
 void HFGui::on_resetBoxPushButton_clicked()
 {
 	qglviewer::Quaternion q;
@@ -112,8 +122,12 @@ void HFGui::on_containedTrisPushButton_clicked()
 	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
 	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox(box.min(), box.max()));
 	for(const cg3::Dcel::Face* f : lf){
-		if (f->normal().dot(dir) >= -cg3::EPSILON)
-			mesh.face(f->id())->setColor(cg3::GREEN);
+		if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+			if (f->normal().dot(dir) >= -cg3::EPSILON)
+				mesh.face(f->id())->setColor(cg3::GREEN);
+			else
+				mesh.face(f->id())->setColor(cg3::YELLOW);
+		}
 		else
 			mesh.face(f->id())->setColor(cg3::RED);
 	}
@@ -128,7 +142,6 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
 	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
 	mesh.rotate(rot);
-	//box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 	treeMesh = cg3::cgal::AABBTree(mesh);
 	mesh.update();
 	mw.canvas.update();
@@ -143,5 +156,16 @@ void HFGui::on_cutPushButton_clicked()
 	treeMesh = cg3::cgal::AABBTree(mesh);
 	hfDecomposition.pushBack(res, "");
 	hfDirs.push_back(cg3::AXIS[box.millingDirection()]);
+	mw.canvas.update();
+}
+
+void HFGui::on_manualRotationPushButton_clicked()
+{
+	cg3::Vec3 axis(ui->xAxisSpinBox->value(), ui->yAxisSpinBox->value(), ui->zAxisSpinBox->value());
+	double angle = ui->angleSpinBox->value();
+	Eigen::Matrix3d rot = cg3::rotationMatrix(axis, angle);
+	mesh.rotate(rot);
+	treeMesh = cg3::cgal::AABBTree(mesh);
+	mesh.update();
 	mw.canvas.update();
 }
