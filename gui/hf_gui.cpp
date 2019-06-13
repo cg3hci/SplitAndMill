@@ -9,6 +9,8 @@
 
 #include <cg3/algorithms/global_optimal_rotation_matrix.h>
 #include <cg3/algorithms/sphere_coverage.h>
+#include <cg3/libigl/booleans.h>
+#include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 
 HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
@@ -20,6 +22,7 @@ HFGui::HFGui(QWidget *parent) :
 	lsmesh.addSupportedExtension("obj");
 	lsmesh.addSupportedExtension("ply");
 	lsmesh.addSupportedExtension("dcel");
+	mw.canvas.toggleCameraType();
 }
 
 HFGui::~HFGui()
@@ -37,6 +40,7 @@ void HFGui::on_loadMeshPushButton_clicked()
 			mw.pushDrawableObject(&mesh, "Loaded Mesh");
 			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 			mw.pushDrawableObject(&box, "box");
+			mw.pushDrawableObject(&hfDecomposition, "HF Decomposition", false);
 			treeMesh = cg3::cgal::AABBTree(mesh);
 
 			//mw.pushDrawableObject(&box.min(), "min");
@@ -127,5 +131,17 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	//box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 	treeMesh = cg3::cgal::AABBTree(mesh);
 	mesh.update();
+	mw.canvas.update();
+}
+
+void HFGui::on_cutPushButton_clicked()
+{
+	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(box.min(), box.max());
+	cg3::DrawableDcel res = cg3::DrawableDcel(cg3::libigl::intersection(mesh, b));
+	mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
+	mesh.update();
+	treeMesh = cg3::cgal::AABBTree(mesh);
+	hfDecomposition.pushBack(res, "");
+	hfDirs.push_back(cg3::AXIS[box.millingDirection()]);
 	mw.canvas.update();
 }

@@ -11,6 +11,7 @@
 #include <cg3/viewer/mainwindow.h>
 
 #include <cg3/viewer/drawable_objects/drawable_dcel.h>
+#include <cg3/viewer/drawable_objects/drawable_objects_container.h>
 #include <cg3/viewer/utilities/loadersaver.h>
 #include <cg3/cgal/aabbtree.h>
 
@@ -49,6 +50,8 @@ private slots:
 
 	void on_optimalOrientationPushButton_clicked();
 
+	void on_cutPushButton_clicked();
+
 private:
 	Ui::HFGui *ui;
 
@@ -60,6 +63,8 @@ private:
 	cg3::cgal::AABBTree treeMesh;
 
 	ManipulableBoundingBox box;
+	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
+	std::vector<cg3::Vec3> hfDirs;
 };
 
 #endif // CG3_EXAMPLE_MANAGER_H
