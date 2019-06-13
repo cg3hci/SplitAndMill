@@ -39,11 +39,24 @@ CONFIG += c++11
 #   CG3_CINOLIB             -- CinoLib interface
 #
 # Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_MESHES
-CONFIG += CG3_CORE
+CONFIG += CG3_ALL
+CONFIG -= CG3_CINOLIB
 
 # Include the chosen modules
 include (cg3lib/cg3.pri)
 message($$MODULES)
 
+HEADERS += \
+    gui/hf_gui.h \
+    gui/manipulableboundingbox.h \
+    gui/manipulablesphere.h
+
 SOURCES += \
+    gui/hf_gui.cpp \
+    gui/manipulableboundingbox.cpp \
+    gui/manipulablesphere.cpp \
     main.cpp
+
+FORMS += \
+    gui/hf_gui.ui
+
