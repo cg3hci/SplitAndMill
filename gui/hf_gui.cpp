@@ -41,7 +41,7 @@ void HFGui::on_loadMeshPushButton_clicked()
 			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 			mw.pushDrawableObject(&box, "box");
 			mw.pushDrawableObject(&hfDecomposition, "HF Decomposition", false);
-			treeMesh = cg3::cgal::AABBTree(mesh);
+			treeMesh = cg3::cgal::AABBTree3(mesh);
 
 			//mw.pushDrawableObject(&box.min(), "min");
 			//mw.pushDrawableObject(&box.max(), "max");
@@ -120,7 +120,7 @@ void HFGui::on_containedTrisPushButton_clicked()
 {
 	mesh.setColor(cg3::GREY);
 	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
-	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox(box.min(), box.max()));
+	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox3(box.min(), box.max()));
 	for(const cg3::Dcel::Face* f : lf){
 		if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
 			if (f->normal().dot(dir) >= -cg3::EPSILON)
@@ -142,7 +142,7 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
 	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
 	mesh.rotate(rot);
-	treeMesh = cg3::cgal::AABBTree(mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mesh.update();
 	mw.canvas.update();
 }
@@ -153,7 +153,7 @@ void HFGui::on_cutPushButton_clicked()
 	cg3::DrawableDcel res = cg3::DrawableDcel(cg3::libigl::intersection(mesh, b));
 	mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
 	mesh.update();
-	treeMesh = cg3::cgal::AABBTree(mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
 	hfDecomposition.pushBack(res, "");
 	hfDirs.push_back(cg3::AXIS[box.millingDirection()]);
 	mw.canvas.update();
@@ -165,7 +165,7 @@ void HFGui::on_manualRotationPushButton_clicked()
 	double angle = ui->angleSpinBox->value();
 	Eigen::Matrix3d rot = cg3::rotationMatrix(axis, angle);
 	mesh.rotate(rot);
-	treeMesh = cg3::cgal::AABBTree(mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mesh.update();
 	mw.canvas.update();
 }

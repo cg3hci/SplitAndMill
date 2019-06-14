@@ -7,7 +7,7 @@
 #include "manipulablesphere.h"
 
 #include <cg3/utilities/const.h>
-#include <cg3/viewer/opengl_objects/opengl_objects.h>
+#include <cg3/viewer/opengl_objects/opengl_objects3.h>
 
 ManipulableSphere::ManipulableSphere() :
 	center(), radius(0.01), color(cg3::BLUE), colorHighlited(cg3::RED)
@@ -32,7 +32,7 @@ void ManipulableSphere::drawHighlighted() const
 	cg3::opengl::drawSphere(center, radius, colorHighlited, 8);
 }
 
-cg3::Pointd ManipulableSphere::sceneCenter() const
+cg3::Point3d ManipulableSphere::sceneCenter() const
 {
 	return center;
 }

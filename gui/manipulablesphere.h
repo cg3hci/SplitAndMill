@@ -22,12 +22,12 @@ public:
 	// DrawableObject interface
 	void draw() const;
 	void drawHighlighted() const;
-	cg3::Pointd sceneCenter() const;
+	cg3::Point3d sceneCenter() const;
 	double sceneRadius() const;
 
 
 private:
-	cg3::Pointd center;
+	cg3::Point3d center;
 	double radius;
 	cg3::Color color;
 	cg3::Color colorHighlited;

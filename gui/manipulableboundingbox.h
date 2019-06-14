@@ -8,7 +8,7 @@
 #define MANIPULABLEBOUNDINGBOX_H
 
 #include "manipulablesphere.h"
-#include <cg3/viewer/drawable_objects/drawable_bounding_box.h>
+#include <cg3/viewer/drawable_objects/drawable_bounding_box3.h>
 #include <cg3/viewer/glcanvas.h>
 
 class ManipulableBoundingBox : public cg3::ManipulableObject
@@ -20,17 +20,17 @@ public:
 
 	// DrawableObject interface
 	void draw() const;
-	cg3::Pointd sceneCenter() const;
+	cg3::Point3d sceneCenter() const;
 	double sceneRadius() const;
 
 	// ManipulableObject interface
 	void drawHighlighted() const;
 
-	void set(const cg3::Pointd& min, const cg3::Pointd& max);
+	void set(const cg3::Point3d &min, const cg3::Point3d &max);
 	void setMillingDirection(MillingDir dir);
 	MillingDir millingDirection() const {return millingDir;};
-	cg3::Pointd min() const {return _min.position();}
-	cg3::Pointd max() const {return _max.position();}
+	cg3::Point3d min() const {return _min.position();}
+	cg3::Point3d max() const {return _max.position();}
 
 protected:
 	void drawSpheres() const;

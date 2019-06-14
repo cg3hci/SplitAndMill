@@ -7,7 +7,7 @@
 #include "manipulableboundingbox.h"
 
 #include <cg3/utilities/const.h>
-#include <cg3/viewer/opengl_objects/opengl_objects.h>
+#include <cg3/viewer/opengl_objects/opengl_objects3.h>
 
 ManipulableBoundingBox::ManipulableBoundingBox() :
 	df(1),
@@ -23,11 +23,11 @@ ManipulableBoundingBox::ManipulableBoundingBox() :
 void ManipulableBoundingBox::draw() const
 {
 	drawSpheres();
-	cg3::opengl::drawBox(_min.translation(), _max.translation(), cg3::BLACK);
+	cg3::opengl::drawBox3(_min.translation(), _max.translation(), cg3::BLACK);
 	drawArrow();
 }
 
-cg3::Pointd ManipulableBoundingBox::sceneCenter() const
+cg3::Point3d ManipulableBoundingBox::sceneCenter() const
 {
 	return (_min.translation() + _max.translation()) * 0.5;
 }
@@ -40,13 +40,13 @@ double ManipulableBoundingBox::sceneRadius() const
 void ManipulableBoundingBox::drawHighlighted() const
 {
 	drawSpheres();
-	cg3::opengl::drawBox(_min.translation(), _max.translation(), cg3::RED, 2);
+	cg3::opengl::drawBox3(_min.translation(), _max.translation(), cg3::RED, 2);
 	drawArrow();
 }
 
-void ManipulableBoundingBox::set(const cg3::Pointd &min, const cg3::Pointd &max)
+void ManipulableBoundingBox::set(const cg3::Point3d &min, const cg3::Point3d &max)
 {
-	cg3::Pointd center = (min + max)*0.5;
+	cg3::Point3d center = (min + max)*0.5;
 	setTranslation(center);
 	_min.setTranslation(min-center);
 	_max.setTranslation(max-center);
@@ -83,45 +83,45 @@ void ManipulableBoundingBox::drawSpheres() const
 
 void ManipulableBoundingBox::drawArrow() const
 {
-	cg3::Pointd base = (_min.translation() + _max.translation()) * 0.5;
-	cg3::Pointd minBody, maxBody, arrowPoint;
+	cg3::Point3d base = (_min.translation() + _max.translation()) * 0.5;
+	cg3::Point3d minBody, maxBody, arrowPoint;
 	cg3::Color col;
 	switch (millingDir) {
 	case PLUS_X :
 		col = cg3::RED;
-		minBody = cg3::Pointd(_max.translation().x()+df, base.y(), base.z());
-		maxBody = cg3::Pointd(_max.translation().x()+df*1.5, base.y(), base.z());
-		arrowPoint = maxBody + cg3::Pointd(df/4,0,0);
+		minBody = cg3::Point3d(_max.translation().x()+df, base.y(), base.z());
+		maxBody = cg3::Point3d(_max.translation().x()+df*1.5, base.y(), base.z());
+		arrowPoint = maxBody + cg3::Point3d(df/4,0,0);
 		break;
 	case PLUS_Y :
 		col = cg3::GREEN;
-		minBody = cg3::Pointd(base.x(), _max.translation().y()+df, base.z());
-		maxBody = cg3::Pointd(base.x(), _max.translation().y()+df*1.5 ,base.z());
-		arrowPoint = maxBody + cg3::Pointd(0,df/4,0);
+		minBody = cg3::Point3d(base.x(), _max.translation().y()+df, base.z());
+		maxBody = cg3::Point3d(base.x(), _max.translation().y()+df*1.5 ,base.z());
+		arrowPoint = maxBody + cg3::Point3d(0,df/4,0);
 		break;
 	case PLUS_Z :
 		col = cg3::BLUE;
-		minBody = cg3::Pointd(base.x(), base.y(),_max.translation().z()+df);
-		maxBody = cg3::Pointd(base.x(), base.y(),_max.translation().z()+df*1.5);
-		arrowPoint = maxBody + cg3::Pointd(0,0,df/4);
+		minBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df);
+		maxBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df*1.5);
+		arrowPoint = maxBody + cg3::Point3d(0,0,df/4);
 		break;
 	case MINUS_X :
 		col = cg3::RED;
-		minBody = cg3::Pointd(_min.translation().x()-df, base.y(), base.z());
-		maxBody = cg3::Pointd(_min.translation().x()-df*1.5, base.y(), base.z());
-		arrowPoint = maxBody - cg3::Pointd(df/4,0,0);
+		minBody = cg3::Point3d(_min.translation().x()-df, base.y(), base.z());
+		maxBody = cg3::Point3d(_min.translation().x()-df*1.5, base.y(), base.z());
+		arrowPoint = maxBody - cg3::Point3d(df/4,0,0);
 		break;
 	case MINUS_Y :
 		col = cg3::GREEN;
-		minBody = cg3::Pointd(base.x(), _min.translation().y()-df, base.z());
-		maxBody = cg3::Pointd(base.x(), _min.translation().y()-df*1.5 ,base.z());
-		arrowPoint = maxBody - cg3::Pointd(0,df/4,0);
+		minBody = cg3::Point3d(base.x(), _min.translation().y()-df, base.z());
+		maxBody = cg3::Point3d(base.x(), _min.translation().y()-df*1.5 ,base.z());
+		arrowPoint = maxBody - cg3::Point3d(0,df/4,0);
 		break;
 	case MINUS_Z :
 		col = cg3::BLUE;
-		minBody = cg3::Pointd(base.x(), base.y(),_min.translation().z()-df);
-		maxBody = cg3::Pointd(base.x(), base.y(),_min.translation().z()-df*1.5);
-		arrowPoint = maxBody - cg3::Pointd(0,0,df/4);
+		minBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df);
+		maxBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df*1.5);
+		arrowPoint = maxBody - cg3::Point3d(0,0,df/4);
 		break;
 	default:
 		assert(0);
