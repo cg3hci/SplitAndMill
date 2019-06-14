@@ -4,7 +4,7 @@
  *
  * @author Alessandro Muntoni (muntoni.alessandro@gmail.com)
  */
-#include "manipulablesphere.h"
+#include "manipulable_sphere.h"
 
 #include <cg3/utilities/const.h>
 #include <cg3/viewer/opengl_objects/opengl_objects3.h>

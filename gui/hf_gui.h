@@ -15,7 +15,8 @@
 #include <cg3/viewer/utilities/loadersaver.h>
 #include <cg3/cgal/aabb_tree3.h>
 
-#include "manipulableboundingbox.h"
+#include "manipulable_boundingbox.h"
+#include "user_action.h"
 
 namespace Ui {
 class HFGui;
@@ -29,12 +30,16 @@ public:
 	explicit HFGui(QWidget *parent = 0);
 	~HFGui();
 
+	void addAction(const UserAction& action);
+
+public slots:
+	void undo();
+	void redo();
+
 private slots:
 	void on_loadMeshPushButton_clicked();
 
 	void on_clearPushButton_clicked();
-
-	void on_resetBoxPushButton_clicked();
 
 	void on_pxRadioButton_toggled(bool checked);
 
@@ -48,6 +53,8 @@ private slots:
 
 	void on_mzRadioButton_toggled(bool checked);
 
+	void on_colorAllTrisPushButton_clicked();
+
 	void on_containedTrisPushButton_clicked();
 
 	void on_optimalOrientationPushButton_clicked();
@@ -55,6 +62,8 @@ private slots:
 	void on_cutPushButton_clicked();
 
 	void on_manualRotationPushButton_clicked();
+
+
 
 private:
 	Ui::HFGui *ui;
@@ -69,6 +78,8 @@ private:
 	ManipulableBoundingBox box;
 	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
 	std::vector<cg3::Vec3> hfDirs;
+	std::vector<UserAction> actions;
+	uint actualAction;
 };
 
 #endif // CG3_EXAMPLE_MANAGER_H

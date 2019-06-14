@@ -48,13 +48,15 @@ message($$MODULES)
 
 HEADERS += \
     gui/hf_gui.h \
-    gui/manipulableboundingbox.h \
-    gui/manipulablesphere.h
+    gui/manipulable_boundingbox.h \
+    gui/manipulable_sphere.h \
+    gui/user_action.h
 
 SOURCES += \
     gui/hf_gui.cpp \
-    gui/manipulableboundingbox.cpp \
-    gui/manipulablesphere.cpp \
+    gui/manipulable_boundingbox.cpp \
+    gui/manipulable_sphere.cpp \
+    gui/user_action.cpp \
     main.cpp
 
 FORMS += \

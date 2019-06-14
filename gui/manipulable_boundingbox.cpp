@@ -4,7 +4,7 @@
  *
  * @author Alessandro Muntoni (muntoni.alessandro@gmail.com)
  */
-#include "manipulableboundingbox.h"
+#include "manipulable_boundingbox.h"
 
 #include <cg3/utilities/const.h>
 #include <cg3/viewer/opengl_objects/opengl_objects3.h>

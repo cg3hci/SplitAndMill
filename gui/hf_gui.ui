@@ -23,10 +23,24 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="5" column="1">
-       <widget class="QPushButton" name="cutPushButton">
+      <item row="1" column="0" colspan="3">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>Cut</string>
+         <string>Box</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QRadioButton" name="myRadioButton">
+        <property name="text">
+         <string>-Y</string>
         </property>
        </widget>
       </item>
@@ -40,10 +54,10 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QRadioButton" name="mxRadioButton">
+      <item row="3" column="1">
+       <widget class="QRadioButton" name="pyRadioButton">
         <property name="text">
-         <string>-X</string>
+         <string>+Y</string>
         </property>
        </widget>
       </item>
@@ -61,45 +75,38 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
+      <item row="4" column="0">
+       <widget class="QRadioButton" name="mxRadioButton">
         <property name="text">
-         <string>Box</string>
+         <string>-X</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="resetBoxPushButton">
+      <item row="2" column="0" colspan="2">
+       <widget class="QLabel" name="label_11">
         <property name="text">
-         <string>Reset Rot Box</string>
+         <string>Milling Direction:</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QRadioButton" name="pyRadioButton">
+      <item row="5" column="2">
+       <widget class="QPushButton" name="cutPushButton">
         <property name="text">
-         <string>+Y</string>
+         <string>Cut</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="5" column="1">
        <widget class="QPushButton" name="containedTrisPushButton">
         <property name="text">
          <string>Contained Tris</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QRadioButton" name="myRadioButton">
+      <item row="5" column="0">
+       <widget class="QPushButton" name="colorAllTrisPushButton">
         <property name="text">
-         <string>-Y</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="3">
-       <widget class="Line" name="line_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <string>Color All Tris</string>
         </property>
        </widget>
       </item>
@@ -121,14 +128,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="0">
-       <widget class="QPushButton" name="loadMeshPushButton">
-        <property name="text">
-         <string>Load Mesh</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
+      <item row="6" column="0">
        <widget class="QFrame" name="frame_3">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -199,21 +199,42 @@
         </layout>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Mesh</string>
+      <item row="1" column="0" colspan="2">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>Mesh Smoothing</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="loadMeshPushButton">
+        <property name="text">
+         <string>Load Mesh</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
        <widget class="QPushButton" name="clearPushButton">
         <property name="text">
          <string>Clear</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="2">
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Mesh Orientation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
        <widget class="QFrame" name="frame_4">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
@@ -320,18 +341,80 @@
         </layout>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Mesh Orientation</string>
+         <string>Mesh</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="3">
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+      <item row="4" column="0" colspan="2">
+       <widget class="QFrame" name="frame_6">
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
         </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_7">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_14">
+           <property name="text">
+            <string>Lambda:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="lambdaSpinBox">
+           <property name="locale">
+            <locale language="English" country="UnitedStates"/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_13">
+           <property name="text">
+            <string>N Iterations:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QSpinBox" name="nIterationsSpinBox"/>
+         </item>
+         <item row="1" column="2">
+          <widget class="QDoubleSpinBox" name="muSpinBox">
+           <property name="locale">
+            <locale language="English" country="UnitedStates"/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="label_15">
+           <property name="text">
+            <string>Mu:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="3">
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>Taubin Smoothing</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>

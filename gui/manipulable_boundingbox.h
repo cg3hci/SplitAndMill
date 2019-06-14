@@ -7,7 +7,7 @@
 #ifndef MANIPULABLEBOUNDINGBOX_H
 #define MANIPULABLEBOUNDINGBOX_H
 
-#include "manipulablesphere.h"
+#include "manipulable_sphere.h"
 #include <cg3/viewer/drawable_objects/drawable_bounding_box3.h>
 #include <cg3/viewer/glcanvas.h>
 
