@@ -8,9 +8,10 @@
 
 #include <cg3/utilities/const.h>
 #include <cg3/viewer/opengl_objects/opengl_objects3.h>
+#include <cg3/viewer/glcanvas.h>
 
-ManipulableSphere::ManipulableSphere() :
-	center(), radius(0.01), color(cg3::BLUE), colorHighlited(cg3::RED)
+ManipulableSphere::ManipulableSphere(cg3::viewer::GLCanvas &canvas) :
+	center(), radius(0.01), color(cg3::BLUE), colorHighlited(cg3::RED), canvas(canvas)
 {
 	  //setRotationSensitivity(0);
 	  setWheelSensitivity(0);
@@ -40,6 +41,21 @@ cg3::Point3d ManipulableSphere::sceneCenter() const
 double ManipulableSphere::sceneRadius() const
 {
 	return radius;
+}
+
+void ManipulableSphere::checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera)
+{
+	ManipulableObject::checkIfGrabsMouse(x, y, camera);
+	if (grabsMouse()){
+		canvas.setManipulatedFrame(this);
+		canvas.setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::FRAME,
+						QGLViewer::TRANSLATE);
+	}
+	else {
+		canvas.setManipulatedFrame(camera->frame());
+		canvas.setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::CAMERA,
+						QGLViewer::ROTATE);
+	}
 }
 
 

@@ -15,7 +15,7 @@ class ManipulableBoundingBox : public cg3::ManipulableObject
 {
 public:
 	typedef enum {PLUS_X = 0, PLUS_Y, PLUS_Z, MINUS_X, MINUS_Y, MINUS_Z} MillingDir;
-	ManipulableBoundingBox();
+	ManipulableBoundingBox(cg3::viewer::GLCanvas& canvas);
 	virtual ~ManipulableBoundingBox(){};
 
 	// DrawableObject interface
@@ -25,6 +25,7 @@ public:
 
 	// ManipulableObject interface
 	void drawHighlighted() const;
+	void checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera);
 
 	void set(const cg3::Point3d &min, const cg3::Point3d &max);
 	void setMillingDirection(MillingDir dir);
@@ -35,9 +36,11 @@ public:
 protected:
 	void drawSpheres() const;
 	void drawArrow() const;
+	cg3::viewer::GLCanvas& canvas;
 	double df;
 	ManipulableSphere _min, _max;
 	MillingDir millingDir;
+
 
 };
 

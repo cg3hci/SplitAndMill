@@ -9,8 +9,11 @@
 #include <cg3/utilities/const.h>
 #include <cg3/viewer/opengl_objects/opengl_objects3.h>
 
-ManipulableBoundingBox::ManipulableBoundingBox() :
+ManipulableBoundingBox::ManipulableBoundingBox(cg3::viewer::GLCanvas& canvas) :
+	canvas(canvas),
 	df(1),
+	_min(canvas),
+	_max(canvas),
 	millingDir(PLUS_Z)
 {
 	_min.setReferenceFrame(this);
@@ -23,7 +26,7 @@ ManipulableBoundingBox::ManipulableBoundingBox() :
 void ManipulableBoundingBox::draw() const
 {
 	drawSpheres();
-	cg3::opengl::drawBox3(_min.translation(), _max.translation(), cg3::BLACK);
+	cg3::opengl::drawBox3(_min.translation(), _max.translation(), cg3::BLACK, 2);
 	drawArrow();
 }
 
@@ -40,7 +43,7 @@ double ManipulableBoundingBox::sceneRadius() const
 void ManipulableBoundingBox::drawHighlighted() const
 {
 	drawSpheres();
-	cg3::opengl::drawBox3(_min.translation(), _max.translation(), cg3::RED, 2);
+	cg3::opengl::drawBox3(_min.translation(), _max.translation(), cg3::RED, 5);
 	drawArrow();
 }
 
@@ -128,4 +131,19 @@ void ManipulableBoundingBox::drawArrow() const
 	}
 	cg3::opengl::drawCylinder(minBody, maxBody, df/8, df/8, col);
 	cg3::opengl::drawCylinder(maxBody, arrowPoint, df/5, 0, col);
+}
+
+void ManipulableBoundingBox::checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera)
+{
+	ManipulableObject::checkIfGrabsMouse(x, y, camera);
+	if (grabsMouse()){
+		canvas.setManipulatedFrame(this);
+		canvas.setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::FRAME,
+						QGLViewer::TRANSLATE);
+	}
+	else {
+		canvas.setManipulatedFrame(camera->frame());
+		canvas.setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::CAMERA,
+						QGLViewer::ROTATE);
+	}
 }

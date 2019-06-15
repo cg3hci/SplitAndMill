@@ -16,6 +16,7 @@ HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
 	mw((cg3::viewer::MainWindow&)*parent),
+	box(mw.canvas),
 	actualAction(0)
 {
     ui->setupUi(this);
