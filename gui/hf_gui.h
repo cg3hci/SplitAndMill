@@ -16,6 +16,7 @@
 #include <cg3/cgal/aabb_tree3.h>
 
 #include "manipulable_boundingbox.h"
+#include "rotatable_mesh.h"
 #include "user_action.h"
 
 namespace Ui {
@@ -75,6 +76,7 @@ private:
 	cg3::DrawableDcel mesh;
 	cg3::cgal::AABBTree3 treeMesh;
 
+	RotatableMesh rotatableMesh;
 	ManipulableBoundingBox box;
 	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
 	std::vector<cg3::Vec3> hfDirs;

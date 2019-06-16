@@ -16,6 +16,7 @@ HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
 	mw((cg3::viewer::MainWindow&)*parent),
+	rotatableMesh(mw.canvas),
 	box(mw.canvas),
 	actualAction(0)
 {
@@ -62,6 +63,9 @@ void HFGui::undo()
 		case UserAction::SMOOTHING :
 			break;
 		case UserAction::ROTATE :
+			mesh = actions[actualAction].mesh();
+			mesh.update();
+			treeMesh = cg3::cgal::AABBTree3(mesh);
 			break;
 		case UserAction::CUT :
 			bool b = mesh.isVisible();
@@ -82,6 +86,7 @@ void HFGui::undo()
 void HFGui::redo()
 {
 	if (actualAction < actions.size()){
+		Eigen::Matrix3d rot;
 		switch(actions[actualAction].type()){
 		case UserAction::LOAD_MESH :
 			mesh = actions[actualAction].mesh();
@@ -94,6 +99,10 @@ void HFGui::redo()
 		case UserAction::SMOOTHING :
 			break;
 		case UserAction::ROTATE :
+			rot = actions[actualAction].rotationMatrix();
+			mesh.rotate(rot);
+			mesh.update();
+			treeMesh = cg3::cgal::AABBTree3(mesh);
 			break;
 		case UserAction::CUT :
 			bool v = mesh.isVisible();
@@ -126,6 +135,9 @@ void HFGui::on_loadMeshPushButton_clicked()
 			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 			mw.pushDrawableObject(&box, "box");
 			mw.pushDrawableObject(&hfDecomposition, "HF Decomposition", false);
+
+			rotatableMesh.setMesh(mesh);
+			mw.pushDrawableObject(&rotatableMesh, "RMesh");
 			treeMesh = cg3::cgal::AABBTree3(mesh);
 
 			//mw.pushDrawableObject(&box.min(), "min");

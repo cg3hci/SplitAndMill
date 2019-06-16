@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>arrow.obj</file>
+    </qresource>
+</RCC>

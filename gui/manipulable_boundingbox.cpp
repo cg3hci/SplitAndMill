@@ -136,6 +136,7 @@ void ManipulableBoundingBox::drawArrow() const
 void ManipulableBoundingBox::checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera)
 {
 	ManipulableObject::checkIfGrabsMouse(x, y, camera);
+
 	if (grabsMouse()){
 		canvas.setManipulatedFrame(this);
 		canvas.setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::FRAME,
