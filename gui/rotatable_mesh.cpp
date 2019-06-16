@@ -20,6 +20,7 @@ RotatableMesh::RotatableMesh(cg3::viewer::GLCanvas& canvas, const cg3::DrawableD
 
 void RotatableMesh::setMesh(const cg3::DrawableDcel &mesh)
 {
+	resetRotation();
 	init = true;
 	this->mesh = mesh;
 	grabbedArrow = -1;
@@ -44,6 +45,9 @@ void RotatableMesh::setMesh(const cg3::DrawableDcel &mesh)
 		arrow[i].update();
 		bc[i] = arrow[i].barycenter();
 	}
+	constraints[0].setRotationConstraint(qglviewer::AxisPlaneConstraint::AXIS, qglviewer::Vec(1,0,0));
+	constraints[1].setRotationConstraint(qglviewer::AxisPlaneConstraint::AXIS, qglviewer::Vec(0,1,0));
+	constraints[2].setRotationConstraint(qglviewer::AxisPlaneConstraint::AXIS, qglviewer::Vec(0,0,1));
 }
 
 void RotatableMesh::draw() const
@@ -107,6 +111,7 @@ void RotatableMesh::checkIfGrabsMouse(int x, int y, const qglviewer::Camera * co
 					}
 					arrow[i].setFaceColors(cg3::YELLOW);
 					arrow[i].update();
+					this->setConstraint(&constraints[i]);
 				}
 				grabbedArrow = i;
 			}
@@ -115,6 +120,7 @@ void RotatableMesh::checkIfGrabsMouse(int x, int y, const qglviewer::Camera * co
 			if (grabbedArrow != -1){
 				arrow[grabbedArrow].setFaceColors(arrowColor[grabbedArrow]);
 				arrow[grabbedArrow].update();
+				this->setConstraint(nullptr);
 			}
 			grabbedArrow = -1;
 		}

@@ -182,20 +182,6 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="0">
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
       </item>
@@ -255,86 +241,10 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item row="2" column="0">
-          <widget class="QDoubleSpinBox" name="xAxisSpinBox">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="minimum">
-            <double>-1.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
-          <widget class="QLabel" name="label_5">
+          <widget class="QCheckBox" name="manualOrientationCheckBox">
            <property name="text">
-            <string>Manual Or:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>Angle</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QDoubleSpinBox" name="yAxisSpinBox">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="minimum">
-            <double>-1.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Axis</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QDoubleSpinBox" name="zAxisSpinBox">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="minimum">
-            <double>-1.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="angleSpinBox">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="minimum">
-            <double>-360.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>360.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QPushButton" name="manualRotationPushButton">
-           <property name="text">
-            <string>Rotate</string>
+            <string>Manual Orientation</string>
            </property>
           </widget>
          </item>
@@ -408,7 +318,7 @@
           </widget>
          </item>
          <item row="2" column="0" colspan="3">
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="taubinSmoothingPushButton">
            <property name="text">
             <string>Taubin Smoothing</string>
            </property>
@@ -442,6 +352,13 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
+      <item row="1" column="0">
+       <widget class="Line" name="line_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_9">
         <property name="text">
@@ -449,10 +366,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="Line" name="line_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="saveDecompositionPushButton">
+        <property name="text">
+         <string>Save Decomposition</string>
         </property>
        </widget>
       </item>

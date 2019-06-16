@@ -14,7 +14,7 @@
 class RotatableMesh : public cg3::ManipulableObject
 {
 public:
-	RotatableMesh(cg3::viewer::GLCanvas& canvas) : canvas(canvas), init(false) {};
+	RotatableMesh(cg3::viewer::GLCanvas& canvas);
 	RotatableMesh(cg3::viewer::GLCanvas& canvas, const cg3::DrawableDcel& mesh);
 
 	void setMesh(const cg3::DrawableDcel &mesh);
@@ -28,6 +28,7 @@ public:
 	void drawHighlighted() const;
 	void checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera);
 
+
 private:
 	cg3::viewer::GLCanvas& canvas;
 	bool init;
@@ -35,8 +36,8 @@ private:
 	cg3::DrawableDcel arrow[3];
 	cg3::Color arrowColor[3];
 	cg3::Point3d bc[3];
+	qglviewer::LocalConstraint constraints[3];
 	int grabbedArrow;
-
 };
 
 #endif // ROTATABLE_MESH_H

@@ -62,9 +62,9 @@ private slots:
 
 	void on_cutPushButton_clicked();
 
-	void on_manualRotationPushButton_clicked();
+	void on_manualOrientationCheckBox_stateChanged(int arg1);
 
-
+	void on_saveDecompositionPushButton_clicked();
 
 private:
 	Ui::HFGui *ui;

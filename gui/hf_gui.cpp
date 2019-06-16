@@ -136,8 +136,8 @@ void HFGui::on_loadMeshPushButton_clicked()
 			mw.pushDrawableObject(&box, "box");
 			mw.pushDrawableObject(&hfDecomposition, "HF Decomposition", false);
 
-			rotatableMesh.setMesh(mesh);
-			mw.pushDrawableObject(&rotatableMesh, "RMesh");
+			//rotatableMesh.setMesh(mesh);
+			//mw.pushDrawableObject(&rotatableMesh, "RMesh");
 			treeMesh = cg3::cgal::AABBTree3(mesh);
 
 			//mw.pushDrawableObject(&box.min(), "min");
@@ -270,14 +270,34 @@ void HFGui::on_cutPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_manualRotationPushButton_clicked()
+
+
+void HFGui::on_manualOrientationCheckBox_stateChanged(int arg1)
 {
-	cg3::Vec3 axis(ui->xAxisSpinBox->value(), ui->yAxisSpinBox->value(), ui->zAxisSpinBox->value());
-	double angle = ui->angleSpinBox->value();
-	Eigen::Matrix3d rot = cg3::rotationMatrix(axis, angle);
-	addAction(UserAction(mesh, rot));
-	mesh.rotate(rot);
-	treeMesh = cg3::cgal::AABBTree3(mesh);
-	mesh.update();
+	if (arg1 == Qt::Checked){
+		mw.setDrawableObjectVisibility(&mesh, false);
+		rotatableMesh.setMesh(mesh);
+		mw.pushDrawableObject(&rotatableMesh, "Rot");
+	}
+	else {
+		Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
+		addAction(UserAction(mesh, rot));
+		mesh.rotate(rot);
+		mesh.update();
+		treeMesh = cg3::cgal::AABBTree3(mesh);
+		mw.deleteDrawableObject(&rotatableMesh);
+		mw.setDrawableObjectVisibility(&mesh, true);
+	}
 	mw.canvas.update();
+}
+
+void HFGui::on_saveDecompositionPushButton_clicked()
+{
+	std::string dir = lsmesh.directoryDialog();
+	if (dir != "") {
+		uint i = 0;
+		for (const cg3::DrawableDcel& b : hfDecomposition){
+			b.saveOnObj(dir + "b" + std::to_string(i) + ".obj", false);
+		}
+	}
 }
