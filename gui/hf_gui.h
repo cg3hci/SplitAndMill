@@ -31,6 +31,7 @@ public:
 	explicit HFGui(QWidget *parent = 0);
 	~HFGui();
 
+	void clear();
 	void addAction(const UserAction& action);
 
 public slots:
@@ -66,6 +67,8 @@ private slots:
 
 	void on_saveDecompositionPushButton_clicked();
 
+	void on_taubinSmoothingPushButton_clicked();
+
 private:
 	Ui::HFGui *ui;
 
@@ -74,6 +77,7 @@ private:
 	cg3::viewer::LoaderSaver lsmesh;
 
 	cg3::DrawableDcel mesh;
+	cg3::DrawableDcel originalMesh;
 	cg3::cgal::AABBTree3 treeMesh;
 
 	RotatableMesh rotatableMesh;

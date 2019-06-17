@@ -11,6 +11,7 @@
 #include <cg3/algorithms/sphere_coverage.h>
 #include <cg3/libigl/booleans.h>
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
+#include <cg3/vcglib/smoothing.h>
 
 HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
@@ -39,6 +40,19 @@ HFGui::~HFGui()
 	delete ui;
 }
 
+void HFGui::clear()
+{
+	mw.deleteDrawableObject(&mesh);
+	mw.deleteDrawableObject(&box);
+	mw.deleteDrawableObject(&hfDecomposition);
+	mw.deleteDrawableObject(&rotatableMesh);
+	hfDecomposition.clear();
+	hfDirs.clear();
+	actions.clear();
+	actualAction = 0;
+	mw.canvas.update();
+}
+
 void HFGui::addAction(const UserAction &action)
 {
 	if(actualAction != actions.size()){
@@ -53,19 +67,15 @@ void HFGui::undo()
 	if (actualAction != 0){
 		actualAction--;
 		switch(actions[actualAction].type()){
-		case UserAction::LOAD_MESH :
-			mw.deleteDrawableObject(&mesh);
-			mw.deleteDrawableObject(&box);
-			mw.deleteDrawableObject(&hfDecomposition);
-			hfDecomposition.clear();
-			hfDirs.clear();
-			break;
 		case UserAction::SMOOTHING :
+			mesh = actions[actualAction].mesh();
+			if (actions[actualAction].firstSmoothing()){
+				mw.deleteDrawableObject(&originalMesh);
+				mw.setDrawableObjectName(&mesh, "Loaded Mesh");
+			}
 			break;
 		case UserAction::ROTATE :
 			mesh = actions[actualAction].mesh();
-			mesh.update();
-			treeMesh = cg3::cgal::AABBTree3(mesh);
 			break;
 		case UserAction::CUT :
 			bool b = mesh.isVisible();
@@ -74,11 +84,11 @@ void HFGui::undo()
 			box.setMillingDirection(actions[actualAction].millingDir());
 			hfDecomposition.erase(hfDecomposition.size()-1);
 			hfDirs.pop_back();
-			mesh.update();
 			mw.setDrawableObjectVisibility(&mesh, b);
-			treeMesh = cg3::cgal::AABBTree3(mesh);
 			break;
 		}
+		mesh.update();
+		treeMesh = cg3::cgal::AABBTree3(mesh);
 		mw.canvas.update();
 	}
 }
@@ -88,21 +98,18 @@ void HFGui::redo()
 	if (actualAction < actions.size()){
 		Eigen::Matrix3d rot;
 		switch(actions[actualAction].type()){
-		case UserAction::LOAD_MESH :
-			mesh = actions[actualAction].mesh();
-			mw.pushDrawableObject(&mesh, "Loaded Mesh");
-			mw.pushDrawableObject(&box, "Box");
-			mw.pushDrawableObject(&hfDecomposition, "Decomposition", false);
-			mesh.update();
-			treeMesh = cg3::cgal::AABBTree3(mesh);
-			break;
 		case UserAction::SMOOTHING :
+			if (actions[actualAction].firstSmoothing()){
+				originalMesh = actions[actualAction].mesh();
+				originalMesh.update();
+				mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
+				mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
+			}
+			mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
 			break;
 		case UserAction::ROTATE :
 			rot = actions[actualAction].rotationMatrix();
 			mesh.rotate(rot);
-			mesh.update();
-			treeMesh = cg3::cgal::AABBTree3(mesh);
 			break;
 		case UserAction::CUT :
 			bool v = mesh.isVisible();
@@ -112,11 +119,11 @@ void HFGui::redo()
 			box.setMillingDirection(actions[actualAction].millingDir());
 			hfDecomposition.pushBack(actions[actualAction].block(), "");
 			hfDirs.push_back(actions[actualAction].millingDir());
-			mesh.update();
-			treeMesh = cg3::cgal::AABBTree3(mesh);
 			mw.setDrawableObjectVisibility(&mesh, v);
 			break;
 		}
+		mesh.update();
+		treeMesh = cg3::cgal::AABBTree3(mesh);
 		mw.canvas.update();
 		actualAction++;
 	}
@@ -126,36 +133,44 @@ void HFGui::on_loadMeshPushButton_clicked()
 {
 	std::string filename = lsmesh.loadDialog("Load Mesh");
 	if (filename != ""){
+		clear();
 		if(mesh.loadFromFile(filename)){
 			mesh.translate(-mesh.boundingBox().center());
 			mesh.setFaceColors(cg3::GREY);
 			mesh.update();
-			addAction(UserAction(mesh));
 			mw.pushDrawableObject(&mesh, "Loaded Mesh");
 			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 			mw.pushDrawableObject(&box, "box");
 			mw.pushDrawableObject(&hfDecomposition, "HF Decomposition", false);
-
-			//rotatableMesh.setMesh(mesh);
-			//mw.pushDrawableObject(&rotatableMesh, "RMesh");
 			treeMesh = cg3::cgal::AABBTree3(mesh);
 
-			//mw.pushDrawableObject(&box.min(), "min");
-			//mw.pushDrawableObject(&box.max(), "max");
 			mw.canvas.fitScene();
 			mw.canvas.update();
 		}
 	}
 }
 
+void HFGui::on_taubinSmoothingPushButton_clicked()
+{
+	bool firstSmooth = false;
+	if (!mw.containsDrawableObject(&originalMesh)){
+		originalMesh = mesh;
+		originalMesh.update();
+		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
+		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
+		firstSmooth = true;
+	}
+	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth));
+	mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
+	mesh.update();
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+
+	mw.canvas.update();
+}
+
 void HFGui::on_clearPushButton_clicked()
 {
-	mw.deleteDrawableObject(&mesh);
-	mw.deleteDrawableObject(&box);
-	mw.deleteDrawableObject(&hfDecomposition);
-	hfDecomposition.clear();
-	hfDirs.clear();
-	mw.canvas.update();
+	clear();
 }
 
 void HFGui::on_pxRadioButton_toggled(bool checked)
@@ -265,7 +280,7 @@ void HFGui::on_cutPushButton_clicked()
 	mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
 	mesh.update();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
-	hfDecomposition.pushBack(res, "");
+	hfDecomposition.pushBack(res, "Block " + std::to_string(hfDecomposition.size()));
 	hfDirs.push_back(cg3::AXIS[box.millingDirection()]);
 	mw.canvas.update();
 }

@@ -10,12 +10,6 @@ UserAction::UserAction()
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh) :
-	actionType(LOAD_MESH),
-	_mesh(mesh)
-{
-}
-
 UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix) :
 	actionType(ROTATE),
 	_mesh(mesh),
@@ -29,6 +23,16 @@ UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel &block, const cg3:
 	_block(block),
 	_box(box),
 	boxDir(millingDir)
+{
+}
+
+UserAction::UserAction(const cg3::Dcel &mesh, uint nIters, double lambda, double mu, bool firstSmooth) :
+	actionType(SMOOTHING),
+	_mesh(mesh),
+	_lambda(lambda),
+	_mu(mu),
+	nIt(nIters),
+	firstSmooth(firstSmooth)
 {
 }
 
@@ -60,6 +64,11 @@ double UserAction::mu() const
 uint UserAction::nIterations() const
 {
 	return nIt;
+}
+
+bool UserAction::firstSmoothing() const
+{
+	return firstSmooth;
 }
 
 Eigen::Matrix3d UserAction::rotationMatrix() const

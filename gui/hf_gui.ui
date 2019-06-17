@@ -291,6 +291,12 @@
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
+           <property name="maximum">
+            <double>1.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>0.890000000000000</double>
+           </property>
           </widget>
          </item>
          <item row="0" column="0">
@@ -301,12 +307,28 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QSpinBox" name="nIterationsSpinBox"/>
+          <widget class="QSpinBox" name="nIterationsSpinBox">
+           <property name="maximum">
+            <number>10000</number>
+           </property>
+           <property name="value">
+            <number>100</number>
+           </property>
+          </widget>
          </item>
          <item row="1" column="2">
           <widget class="QDoubleSpinBox" name="muSpinBox">
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
+           </property>
+           <property name="minimum">
+            <double>-1.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>0.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>-0.900000000000000</double>
            </property>
           </widget>
          </item>
