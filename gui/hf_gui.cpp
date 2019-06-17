@@ -17,6 +17,7 @@ HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
 	mw((cg3::viewer::MainWindow&)*parent),
+	actualRotationMatrix(Eigen::Matrix3d::Identity()),
 	rotatableMesh(mw.canvas),
 	box(mw.canvas),
 	actualAction(0)
@@ -47,10 +48,13 @@ void HFGui::clear()
 	mw.deleteDrawableObject(&hfDecomposition);
 	mw.deleteDrawableObject(&rotatableMesh);
 	hfDecomposition.clear();
-	hfDirs.clear();
+	hfBoxes.clear();
 	actions.clear();
 	actualAction = 0;
 	mw.canvas.update();
+
+	ui->tabWidget->setCurrentIndex(0);
+	ui->tabWidget->setEnabled(false);
 }
 
 void HFGui::addAction(const UserAction &action)
@@ -76,14 +80,15 @@ void HFGui::undo()
 			break;
 		case UserAction::ROTATE :
 			mesh = actions[actualAction].mesh();
+			actualRotationMatrix = actions[actualAction].actualRotationMatrix(); //avoid numerical errors
+			std::cerr << actualRotationMatrix << "\n";
 			break;
 		case UserAction::CUT :
 			bool b = mesh.isVisible();
 			mesh = actions[actualAction].mesh();
 			box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
-			box.setMillingDirection(actions[actualAction].millingDir());
-			hfDecomposition.erase(hfDecomposition.size()-1);
-			hfDirs.pop_back();
+			box.setMillingDirection(actions[actualAction].box().millingDirection());
+			hfBoxes.pop_back();
 			mw.setDrawableObjectVisibility(&mesh, b);
 			break;
 		}
@@ -109,16 +114,17 @@ void HFGui::redo()
 			break;
 		case UserAction::ROTATE :
 			rot = actions[actualAction].rotationMatrix();
+			actualRotationMatrix *= rot;
 			mesh.rotate(rot);
+			std::cerr << actualRotationMatrix << "\n";
 			break;
 		case UserAction::CUT :
 			bool v = mesh.isVisible();
 			box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
 			cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(box.min(), box.max());
 			mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
-			box.setMillingDirection(actions[actualAction].millingDir());
-			hfDecomposition.pushBack(actions[actualAction].block(), "");
-			hfDirs.push_back(actions[actualAction].millingDir());
+			box.setMillingDirection(actions[actualAction].box().millingDirection());
+			hfBoxes.push_back(actions[actualAction].box());
 			mw.setDrawableObjectVisibility(&mesh, v);
 			break;
 		}
@@ -141,11 +147,33 @@ void HFGui::on_loadMeshPushButton_clicked()
 			mw.pushDrawableObject(&mesh, "Loaded Mesh");
 			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 			mw.pushDrawableObject(&box, "box");
-			mw.pushDrawableObject(&hfDecomposition, "HF Decomposition", false);
 			treeMesh = cg3::cgal::AABBTree3(mesh);
 
 			mw.canvas.fitScene();
 			mw.canvas.update();
+
+			ui->tabWidget->setEnabled(true);
+			ui->tabWidget->setTabEnabled(0, true);
+			ui->tabWidget->setTabEnabled(1, false);
+			ui->tabWidget->setTabEnabled(2, false);
+			ui->tabWidget->setTabEnabled(3, false);
+			ui->tabWidget->setTabEnabled(4, false);
+		}
+	}
+}
+
+void HFGui::on_clearPushButton_clicked()
+{
+	clear();
+}
+
+void HFGui::on_exportDecompositionPushButton_clicked()
+{
+	std::string dir = lsmesh.directoryDialog();
+	if (dir != "") {
+		uint i = 0;
+		for (const cg3::DrawableDcel& b : hfDecomposition){
+			b.saveOnObj(dir + "b" + std::to_string(i) + ".obj", false);
 		}
 	}
 }
@@ -168,15 +196,87 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_clearPushButton_clicked()
+void HFGui::on_smoothingNextPushButton_clicked()
 {
-	clear();
+	ui->tabWidget->setTabEnabled(1, true);
+	ui->tabWidget->setCurrentIndex(1);
+	ui->tabWidget->setTabEnabled(0, false);
+}
+
+void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
+{
+	if (checked){
+		ui->optimalOrientationPushButton->setEnabled(true);
+		ui->nDirsSpinBox->setEnabled(true);
+		ui->resetRotationPushButton->setEnabled(false);
+		ui->manualOrientationDonePushButton->setEnabled(false);
+
+		mw.setDrawableObjectVisibility(&mesh, true);
+		mw.deleteDrawableObject(&rotatableMesh);
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
+{
+	if (checked){
+		ui->optimalOrientationPushButton->setEnabled(false);
+		ui->nDirsSpinBox->setEnabled(false);
+		ui->resetRotationPushButton->setEnabled(true);
+		ui->manualOrientationDonePushButton->setEnabled(true);
+
+		mw.setDrawableObjectVisibility(&mesh, false);
+		rotatableMesh.setMesh(mesh);
+		mw.pushDrawableObject(&rotatableMesh, "Rot");
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_optimalOrientationPushButton_clicked()
+{
+	uint nDirs = ui->nDirsSpinBox->value();
+	std::vector<cg3::Vec3> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
+	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
+	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
+	addAction(UserAction(mesh, rot, actualRotationMatrix));
+	actualRotationMatrix *= rot;
+	mesh.rotate(rot);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mesh.update();
+	mw.canvas.update();
+	std::cerr << actualRotationMatrix << "\n";
+}
+
+void HFGui::on_resetRotationPushButton_clicked()
+{
+	rotatableMesh.resetRotation();
+	mw.canvas.update();
+}
+
+void HFGui::on_manualOrientationDonePushButton_clicked()
+{
+	Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
+	addAction(UserAction(mesh, rot, actualRotationMatrix));
+	actualRotationMatrix *= rot;
+	mesh.rotate(rot);
+	mesh.update();
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+	ui->automaticOrientationRadioButton->toggle();
+	std::cerr << actualRotationMatrix << "\n";
+}
+
+void HFGui::on_orientationNextPushButton_clicked()
+{
+	ui->tabWidget->setTabEnabled(2, true);
+	ui->tabWidget->setCurrentIndex(2);
+	ui->tabWidget->setTabEnabled(1, false);
 }
 
 void HFGui::on_pxRadioButton_toggled(bool checked)
 {
 	if (checked){
-		box.setMillingDirection(ManipulableBoundingBox::PLUS_X);
+		box.setMillingDirection(HFBox::PLUS_X);
 		mw.canvas.update();
 	}
 }
@@ -184,7 +284,7 @@ void HFGui::on_pxRadioButton_toggled(bool checked)
 void HFGui::on_pyRadioButton_toggled(bool checked)
 {
 	if (checked){
-		box.setMillingDirection(ManipulableBoundingBox::PLUS_Y);
+		box.setMillingDirection(HFBox::PLUS_Y);
 		mw.canvas.update();
 	}
 }
@@ -192,7 +292,7 @@ void HFGui::on_pyRadioButton_toggled(bool checked)
 void HFGui::on_pzRadioButton_toggled(bool checked)
 {
 	if (checked){
-		box.setMillingDirection(ManipulableBoundingBox::PLUS_Z);
+		box.setMillingDirection(HFBox::PLUS_Z);
 		mw.canvas.update();
 	}
 }
@@ -200,7 +300,7 @@ void HFGui::on_pzRadioButton_toggled(bool checked)
 void HFGui::on_mxRadioButton_toggled(bool checked)
 {
 	if (checked){
-		box.setMillingDirection(ManipulableBoundingBox::MINUS_X);
+		box.setMillingDirection(HFBox::MINUS_X);
 		mw.canvas.update();
 	}
 }
@@ -208,7 +308,7 @@ void HFGui::on_mxRadioButton_toggled(bool checked)
 void HFGui::on_myRadioButton_toggled(bool checked)
 {
 	if (checked){
-		box.setMillingDirection(ManipulableBoundingBox::MINUS_Y);
+		box.setMillingDirection(HFBox::MINUS_Y);
 		mw.canvas.update();
 	}
 }
@@ -216,7 +316,7 @@ void HFGui::on_myRadioButton_toggled(bool checked)
 void HFGui::on_mzRadioButton_toggled(bool checked)
 {
 	if (checked){
-		box.setMillingDirection(ManipulableBoundingBox::MINUS_Z);
+		box.setMillingDirection(HFBox::MINUS_Z);
 		mw.canvas.update();
 	}
 }
@@ -258,61 +358,16 @@ void HFGui::on_containedTrisPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_optimalOrientationPushButton_clicked()
-{
-	uint nDirs = ui->nDirsSpinBox->value();
-	std::vector<cg3::Vec3> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
-	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
-	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
-	addAction(UserAction(mesh, rot));
-	mesh.rotate(rot);
-	treeMesh = cg3::cgal::AABBTree3(mesh);
-	mesh.update();
-	mw.canvas.update();
-}
-
 void HFGui::on_cutPushButton_clicked()
 {
 	cg3::BoundingBox3 bb(box.min(), box.max());
 	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(bb);
-	cg3::DrawableDcel res = cg3::DrawableDcel(cg3::libigl::intersection(mesh, b));
-	addAction(UserAction(mesh, res, bb, box.millingDirection()));
+	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
+	hfBoxes.push_back(hfbox);
+	addAction(UserAction(mesh, hfbox));
 	mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
 	mesh.update();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
-	hfDecomposition.pushBack(res, "Block " + std::to_string(hfDecomposition.size()));
-	hfDirs.push_back(cg3::AXIS[box.millingDirection()]);
+
 	mw.canvas.update();
-}
-
-
-
-void HFGui::on_manualOrientationCheckBox_stateChanged(int arg1)
-{
-	if (arg1 == Qt::Checked){
-		mw.setDrawableObjectVisibility(&mesh, false);
-		rotatableMesh.setMesh(mesh);
-		mw.pushDrawableObject(&rotatableMesh, "Rot");
-	}
-	else {
-		Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
-		addAction(UserAction(mesh, rot));
-		mesh.rotate(rot);
-		mesh.update();
-		treeMesh = cg3::cgal::AABBTree3(mesh);
-		mw.deleteDrawableObject(&rotatableMesh);
-		mw.setDrawableObjectVisibility(&mesh, true);
-	}
-	mw.canvas.update();
-}
-
-void HFGui::on_saveDecompositionPushButton_clicked()
-{
-	std::string dir = lsmesh.directoryDialog();
-	if (dir != "") {
-		uint i = 0;
-		for (const cg3::DrawableDcel& b : hfDecomposition){
-			b.saveOnObj(dir + "b" + std::to_string(i) + ".obj", false);
-		}
-	}
 }

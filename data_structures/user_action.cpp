@@ -10,19 +10,18 @@ UserAction::UserAction()
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix) :
+UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix, const Eigen::Matrix3d &actualRotationMatrix) :
 	actionType(ROTATE),
 	_mesh(mesh),
-	_rotation(rotMatrix)
+	_rotation(rotMatrix),
+	actualRot(actualRotationMatrix)
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel &block, const cg3::BoundingBox3 &box, ManipulableBoundingBox::MillingDir millingDir) :
+UserAction::UserAction(const cg3::Dcel &mesh, const HFBox &box) :
 	actionType(CUT),
 	_mesh(mesh),
-	_block(block),
-	_box(box),
-	boxDir(millingDir)
+	_box(box)
 {
 }
 
@@ -44,11 +43,6 @@ UserAction::ActionType UserAction::type() const
 const cg3::Dcel &UserAction::mesh() const
 {
 	return _mesh;
-}
-
-const cg3::Dcel &UserAction::block() const
-{
-	return _block;
 }
 
 double UserAction::lambda() const
@@ -76,12 +70,12 @@ Eigen::Matrix3d UserAction::rotationMatrix() const
 	return _rotation;
 }
 
-cg3::BoundingBox3 UserAction::box() const
+Eigen::Matrix3d UserAction::actualRotationMatrix() const
 {
-	return _box;
+	return actualRot;
 }
 
-ManipulableBoundingBox::MillingDir UserAction::millingDir() const
+HFBox UserAction::box() const
 {
-	return boxDir;
+	return _box;
 }

@@ -11,10 +11,12 @@
 #include <cg3/viewer/drawable_objects/drawable_bounding_box3.h>
 #include <cg3/viewer/glcanvas.h>
 
+#include "data_structures/hf_box.h"
+
+
 class ManipulableBoundingBox : public cg3::ManipulableObject
 {
 public:
-	typedef enum {PLUS_X = 0, PLUS_Y, PLUS_Z, MINUS_X, MINUS_Y, MINUS_Z} MillingDir;
 	ManipulableBoundingBox(cg3::viewer::GLCanvas& canvas);
 	virtual ~ManipulableBoundingBox(){};
 
@@ -28,8 +30,8 @@ public:
 	void checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera);
 
 	void set(const cg3::Point3d &min, const cg3::Point3d &max);
-	void setMillingDirection(MillingDir dir);
-	MillingDir millingDirection() const {return millingDir;};
+	void setMillingDirection(HFBox::MillingDir dir);
+	HFBox::MillingDir millingDirection() const {return millingDir;};
 	cg3::Point3d min() const {return _min.position();}
 	cg3::Point3d max() const {return _max.position();}
 
@@ -39,7 +41,7 @@ protected:
 	cg3::viewer::GLCanvas& canvas;
 	double df;
 	ManipulableSphere _min, _max;
-	MillingDir millingDir;
+	HFBox::MillingDir millingDir;
 
 
 };

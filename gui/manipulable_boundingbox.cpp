@@ -14,7 +14,7 @@ ManipulableBoundingBox::ManipulableBoundingBox(cg3::viewer::GLCanvas& canvas) :
 	df(1),
 	_min(canvas),
 	_max(canvas),
-	millingDir(PLUS_Z)
+	millingDir(HFBox::PLUS_Z)
 {
 	_min.setReferenceFrame(this);
 	_max.setReferenceFrame(this);
@@ -58,7 +58,7 @@ void ManipulableBoundingBox::set(const cg3::Point3d &min, const cg3::Point3d &ma
 	_max.setRadius(df/5);
 }
 
-void ManipulableBoundingBox::setMillingDirection(ManipulableBoundingBox::MillingDir dir)
+void ManipulableBoundingBox::setMillingDirection(HFBox::MillingDir dir)
 {
 	millingDir = dir;
 }
@@ -90,37 +90,37 @@ void ManipulableBoundingBox::drawArrow() const
 	cg3::Point3d minBody, maxBody, arrowPoint;
 	cg3::Color col;
 	switch (millingDir) {
-	case PLUS_X :
+	case HFBox::PLUS_X :
 		col = cg3::RED;
 		minBody = cg3::Point3d(_max.translation().x()+df, base.y(), base.z());
 		maxBody = cg3::Point3d(_max.translation().x()+df*1.5, base.y(), base.z());
 		arrowPoint = maxBody + cg3::Point3d(df/4,0,0);
 		break;
-	case PLUS_Y :
+	case HFBox::PLUS_Y :
 		col = cg3::GREEN;
 		minBody = cg3::Point3d(base.x(), _max.translation().y()+df, base.z());
 		maxBody = cg3::Point3d(base.x(), _max.translation().y()+df*1.5 ,base.z());
 		arrowPoint = maxBody + cg3::Point3d(0,df/4,0);
 		break;
-	case PLUS_Z :
+	case HFBox::PLUS_Z :
 		col = cg3::BLUE;
 		minBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df);
 		maxBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df*1.5);
 		arrowPoint = maxBody + cg3::Point3d(0,0,df/4);
 		break;
-	case MINUS_X :
+	case HFBox::MINUS_X :
 		col = cg3::RED;
 		minBody = cg3::Point3d(_min.translation().x()-df, base.y(), base.z());
 		maxBody = cg3::Point3d(_min.translation().x()-df*1.5, base.y(), base.z());
 		arrowPoint = maxBody - cg3::Point3d(df/4,0,0);
 		break;
-	case MINUS_Y :
+	case HFBox::MINUS_Y :
 		col = cg3::GREEN;
 		minBody = cg3::Point3d(base.x(), _min.translation().y()-df, base.z());
 		maxBody = cg3::Point3d(base.x(), _min.translation().y()-df*1.5 ,base.z());
 		arrowPoint = maxBody - cg3::Point3d(0,df/4,0);
 		break;
-	case MINUS_Z :
+	case HFBox::MINUS_Z :
 		col = cg3::BLUE;
 		minBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df);
 		maxBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df*1.5);

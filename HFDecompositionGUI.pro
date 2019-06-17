@@ -47,19 +47,23 @@ include (cg3lib/cg3.pri)
 message($$MODULES)
 
 HEADERS += \
+    data_structures/hf_box.h \
+    data_structures/user_action.h \
     gui/arrow.h \
     gui/hf_gui.h \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
-    gui/rotatable_mesh.h \
-    gui/user_action.h
+    gui/rotatable_mesh.h
+
 
 SOURCES += \
+    data_structures/hf_box.cpp \
+    data_structures/user_action.cpp \
     gui/hf_gui.cpp \
     gui/manipulable_boundingbox.cpp \
     gui/manipulable_sphere.cpp \
     gui/rotatable_mesh.cpp \
-    gui/user_action.cpp \
+
     main.cpp
 
 FORMS += \

@@ -8,15 +8,15 @@
 #define USER_ACTION_H
 
 #include <cg3/meshes/dcel/dcel.h>
-#include "manipulable_boundingbox.h"
+#include "data_structures/hf_box.h"
 
 class UserAction
 {
 public:
 	UserAction();
 
-	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix);
-	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& block, const cg3::BoundingBox3& box, ManipulableBoundingBox::MillingDir millingDir);
+	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix, const Eigen::Matrix3d& actualRotationMatrix);
+	UserAction(const cg3::Dcel& mesh, const HFBox& box);
 	UserAction(const cg3::Dcel& mesh, uint nIters, double lambda, double mu, bool firstSmooth);
 
 	typedef enum {SMOOTHING, ROTATE, CUT} ActionType;
@@ -29,19 +29,18 @@ public:
 	uint nIterations() const;
 	bool firstSmoothing() const;
 	Eigen::Matrix3d rotationMatrix() const;
-	cg3::BoundingBox3 box() const;
-	ManipulableBoundingBox::MillingDir millingDir() const;
+	Eigen::Matrix3d actualRotationMatrix() const;
+	HFBox box() const;
 
 private:
 	ActionType actionType;
 	cg3::Dcel _mesh;
-	cg3::Dcel _block;
 	double _lambda, _mu;
 	uint nIt;
 	bool firstSmooth;
 	Eigen::Matrix3d _rotation;
-	cg3::BoundingBox3 _box;
-	ManipulableBoundingBox::MillingDir boxDir;
+	Eigen::Matrix3d actualRot;
+	HFBox _box;
 };
 
 #endif // USER_ACTION_H

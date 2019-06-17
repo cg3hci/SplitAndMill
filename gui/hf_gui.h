@@ -17,7 +17,8 @@
 
 #include "manipulable_boundingbox.h"
 #include "rotatable_mesh.h"
-#include "user_action.h"
+#include "data_structures/user_action.h"
+#include "data_structures/hf_box.h"
 
 namespace Ui {
 class HFGui;
@@ -39,10 +40,33 @@ public slots:
 	void redo();
 
 private slots:
+
+	//load/save
 	void on_loadMeshPushButton_clicked();
 
 	void on_clearPushButton_clicked();
 
+	void on_exportDecompositionPushButton_clicked();
+
+	//smoothing
+	void on_taubinSmoothingPushButton_clicked();
+
+	void on_smoothingNextPushButton_clicked();
+
+	//orientation
+	void on_automaticOrientationRadioButton_toggled(bool checked);
+
+	void on_manualOrientationRadioButton_toggled(bool checked);
+
+	void on_optimalOrientationPushButton_clicked();
+
+	void on_resetRotationPushButton_clicked();
+
+	void on_manualOrientationDonePushButton_clicked();
+
+	void on_orientationNextPushButton_clicked();
+
+	//box
 	void on_pxRadioButton_toggled(bool checked);
 
 	void on_pyRadioButton_toggled(bool checked);
@@ -59,15 +83,7 @@ private slots:
 
 	void on_containedTrisPushButton_clicked();
 
-	void on_optimalOrientationPushButton_clicked();
-
 	void on_cutPushButton_clicked();
-
-	void on_manualOrientationCheckBox_stateChanged(int arg1);
-
-	void on_saveDecompositionPushButton_clicked();
-
-	void on_taubinSmoothingPushButton_clicked();
 
 private:
 	Ui::HFGui *ui;
@@ -79,11 +95,15 @@ private:
 	cg3::DrawableDcel mesh;
 	cg3::DrawableDcel originalMesh;
 	cg3::cgal::AABBTree3 treeMesh;
+	Eigen::Matrix3d actualRotationMatrix;
+
+	std::vector<HFBox> hfBoxes;
+	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
+
 
 	RotatableMesh rotatableMesh;
 	ManipulableBoundingBox box;
-	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
-	std::vector<cg3::Vec3> hfDirs;
+
 	std::vector<UserAction> actions;
 	uint actualAction;
 };
