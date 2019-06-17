@@ -47,6 +47,7 @@ include (cg3lib/cg3.pri)
 message($$MODULES)
 
 HEADERS += \
+    gui/arrow.h \
     gui/hf_gui.h \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
@@ -63,7 +64,4 @@ SOURCES += \
 
 FORMS += \
     gui/hf_gui.ui
-
-RESOURCES += \
-    arrows.qrc
 

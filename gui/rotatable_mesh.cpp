@@ -5,6 +5,8 @@
  * @author Alessandro Muntoni (muntoni.alessandro@gmail.com)
  */
 #include "rotatable_mesh.h"
+#include "arrow.h"
+#include <cg3/meshes/dcel/dcel_builder.h>
 
 RotatableMesh::RotatableMesh(cg3::viewer::GLCanvas &canvas)  :
 	canvas(canvas), init(false)
@@ -30,7 +32,7 @@ void RotatableMesh::setMesh(const cg3::DrawableDcel &mesh)
 	arrowColor[1] = cg3::GREEN;
 	arrowColor[2] = cg3::BLUE;
 	for (uint i = 0; i < 3; ++i){
-		arrow[i] = cg3::DrawableDcel("/mnt/Dati/Drive/Research/Repos/Projects/HFDecompositionGUI/arrow.obj");
+		arrow[i] = createArrow();
 		arrow[i].setFlatShading();
 		arrow[i].scale(sf);
 		arrow[i].setFaceColors(arrowColor[i]);
