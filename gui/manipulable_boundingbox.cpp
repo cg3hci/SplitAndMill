@@ -54,8 +54,8 @@ void ManipulableBoundingBox::set(const cg3::Point3d &min, const cg3::Point3d &ma
 	_min.setTranslation(min-center);
 	_max.setTranslation(max-center);
 	df = _min.translation().dist(_max.translation()) / 10;
-	_min.setRadius(df/5);
-	_max.setRadius(df/5);
+	_min.setRadius(df/6);
+	_max.setRadius(df/6);
 }
 
 void ManipulableBoundingBox::setMillingDirection(HFBox::MillingDir dir)

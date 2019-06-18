@@ -19,6 +19,7 @@
 #include "rotatable_mesh.h"
 #include "data_structures/user_action.h"
 #include "data_structures/hf_box.h"
+#include "data_structures/hf_engine.h"
 
 namespace Ui {
 class HFGui;
@@ -34,6 +35,7 @@ public:
 
 	void clear();
 	void addAction(const UserAction& action);
+	void updateSurfaceAndvolume();
 
 public slots:
 	void undo();
@@ -85,6 +87,25 @@ private slots:
 
 	void on_cutPushButton_clicked();
 
+	void on_decompositionNextPushButton_clicked();
+
+	void finishDecomposition();
+
+	//test frame
+	void on_testOrTrianglesCheckBox_stateChanged(int arg1);
+
+	void on_pxTestRadioButton_toggled(bool checked);
+
+	void on_pyTestRadioButton_toggled(bool checked);
+
+	void on_pzTestRadioButton_toggled(bool checked);
+
+	void on_mxTestRadioButton_toggled(bool checked);
+
+	void on_myTestRadioButton_toggled(bool checked);
+
+	void on_mzTestRadioButton_toggled(bool checked);
+
 private:
 	Ui::HFGui *ui;
 
@@ -96,9 +117,12 @@ private:
 	cg3::DrawableDcel originalMesh;
 	cg3::cgal::AABBTree3 treeMesh;
 	Eigen::Matrix3d actualRotationMatrix;
-
-	std::vector<HFBox> hfBoxes;
+	double totalSurface, totalVolume;
+	double remainingSurface, remainingVolume;
 	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
+
+	HFEngine hfEngine;
+
 
 
 	RotatableMesh rotatableMesh;

@@ -7,6 +7,8 @@
 #include "hf_gui.h"
 #include "ui_hf_gui.h"
 
+#include <QMessageBox>
+
 #include <cg3/algorithms/global_optimal_rotation_matrix.h>
 #include <cg3/algorithms/sphere_coverage.h>
 #include <cg3/libigl/booleans.h>
@@ -48,13 +50,14 @@ void HFGui::clear()
 	mw.deleteDrawableObject(&hfDecomposition);
 	mw.deleteDrawableObject(&rotatableMesh);
 	hfDecomposition.clear();
-	hfBoxes.clear();
+	hfEngine.clear();
 	actions.clear();
 	actualAction = 0;
 	mw.canvas.update();
 
 	ui->tabWidget->setCurrentIndex(0);
 	ui->tabWidget->setEnabled(false);
+	ui->testFrame->setEnabled(false);
 }
 
 void HFGui::addAction(const UserAction &action)
@@ -66,6 +69,23 @@ void HFGui::addAction(const UserAction &action)
 	actualAction++;
 }
 
+void HFGui::updateSurfaceAndvolume()
+{
+	remainingSurface = 0;
+	for (cg3::Dcel::Face* f : mesh.faceIterator()){
+		if (f->flag() != 1) {
+			remainingSurface+=f->area();
+		}
+	}
+
+	remainingVolume = mesh.volume();
+	double percV = remainingVolume / totalVolume * 100;
+	double percS = remainingSurface / totalSurface * 100;
+
+	ui->remainingVolumeLabel->setText(QString::fromStdString(std::to_string(percV)) + " %");
+	ui->remainingSurfaceLabel->setText(QString::fromStdString(std::to_string(percS)) + " %");
+}
+
 void HFGui::undo()
 {
 	if (actualAction != 0){
@@ -73,7 +93,9 @@ void HFGui::undo()
 		switch(actions[actualAction].type()){
 		case UserAction::SMOOTHING :
 			mesh = actions[actualAction].mesh();
+			hfEngine.setMesh(mesh);
 			if (actions[actualAction].firstSmoothing()){
+				hfEngine.setUseSmoothedMesh(false);
 				mw.deleteDrawableObject(&originalMesh);
 				mw.setDrawableObjectName(&mesh, "Loaded Mesh");
 			}
@@ -81,15 +103,15 @@ void HFGui::undo()
 		case UserAction::ROTATE :
 			mesh = actions[actualAction].mesh();
 			actualRotationMatrix = actions[actualAction].actualRotationMatrix(); //avoid numerical errors
-			std::cerr << actualRotationMatrix << "\n";
 			break;
 		case UserAction::CUT :
 			bool b = mesh.isVisible();
 			mesh = actions[actualAction].mesh();
 			box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
 			box.setMillingDirection(actions[actualAction].box().millingDirection());
-			hfBoxes.pop_back();
+			hfEngine.popBox();
 			mw.setDrawableObjectVisibility(&mesh, b);
+			updateSurfaceAndvolume();
 			break;
 		}
 		mesh.update();
@@ -106,17 +128,18 @@ void HFGui::redo()
 		case UserAction::SMOOTHING :
 			if (actions[actualAction].firstSmoothing()){
 				originalMesh = actions[actualAction].mesh();
+				hfEngine.setOriginalMesh(originalMesh);
 				originalMesh.update();
 				mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
 				mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 			}
 			mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
+			hfEngine.setMesh(mesh);
 			break;
 		case UserAction::ROTATE :
 			rot = actions[actualAction].rotationMatrix();
 			actualRotationMatrix *= rot;
 			mesh.rotate(rot);
-			std::cerr << actualRotationMatrix << "\n";
 			break;
 		case UserAction::CUT :
 			bool v = mesh.isVisible();
@@ -124,8 +147,9 @@ void HFGui::redo()
 			cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(box.min(), box.max());
 			mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
 			box.setMillingDirection(actions[actualAction].box().millingDirection());
-			hfBoxes.push_back(actions[actualAction].box());
+			hfEngine.pushBox(actions[actualAction].box());
 			mw.setDrawableObjectVisibility(&mesh, v);
+			updateSurfaceAndvolume();
 			break;
 		}
 		mesh.update();
@@ -144,10 +168,12 @@ void HFGui::on_loadMeshPushButton_clicked()
 			mesh.translate(-mesh.boundingBox().center());
 			mesh.setFaceColors(cg3::GREY);
 			mesh.update();
+
+			mesh.setFaceFlags(0);
+
 			mw.pushDrawableObject(&mesh, "Loaded Mesh");
-			box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
-			mw.pushDrawableObject(&box, "box");
 			treeMesh = cg3::cgal::AABBTree3(mesh);
+			hfEngine.setMesh(mesh);
 
 			mw.canvas.fitScene();
 			mw.canvas.update();
@@ -158,6 +184,7 @@ void HFGui::on_loadMeshPushButton_clicked()
 			ui->tabWidget->setTabEnabled(2, false);
 			ui->tabWidget->setTabEnabled(3, false);
 			ui->tabWidget->setTabEnabled(4, false);
+			ui->testFrame->setEnabled(true);
 		}
 	}
 }
@@ -184,6 +211,7 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 	if (!mw.containsDrawableObject(&originalMesh)){
 		originalMesh = mesh;
 		originalMesh.update();
+		hfEngine.setOriginalMesh(originalMesh);
 		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 		firstSmooth = true;
@@ -191,6 +219,8 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth));
 	mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
 	mesh.update();
+	mesh.setFaceFlags(0);
+	hfEngine.setMesh(mesh);
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 
 	mw.canvas.update();
@@ -198,9 +228,12 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 
 void HFGui::on_smoothingNextPushButton_clicked()
 {
+	box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
+	mw.pushDrawableObject(&box, "box");
 	ui->tabWidget->setTabEnabled(1, true);
 	ui->tabWidget->setCurrentIndex(1);
 	ui->tabWidget->setTabEnabled(0, false);
+	mw.canvas.update();
 }
 
 void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
@@ -244,7 +277,6 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mesh.update();
 	mw.canvas.update();
-	std::cerr << actualRotationMatrix << "\n";
 }
 
 void HFGui::on_resetRotationPushButton_clicked()
@@ -263,7 +295,6 @@ void HFGui::on_manualOrientationDonePushButton_clicked()
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mw.canvas.update();
 	ui->automaticOrientationRadioButton->toggle();
-	std::cerr << actualRotationMatrix << "\n";
 }
 
 void HFGui::on_orientationNextPushButton_clicked()
@@ -271,6 +302,10 @@ void HFGui::on_orientationNextPushButton_clicked()
 	ui->tabWidget->setTabEnabled(2, true);
 	ui->tabWidget->setCurrentIndex(2);
 	ui->tabWidget->setTabEnabled(1, false);
+	totalVolume = mesh.volume();
+	totalSurface = mesh.surfaceArea();
+	remainingVolume = totalVolume;
+	remainingSurface = totalSurface;
 }
 
 void HFGui::on_pxRadioButton_toggled(bool checked)
@@ -323,7 +358,6 @@ void HFGui::on_mzRadioButton_toggled(bool checked)
 
 void HFGui::on_colorAllTrisPushButton_clicked()
 {
-	mesh.setFaceColors(cg3::GREY);
 	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
 	for (cg3::Dcel::Face* f : mesh.faceIterator()) {
 		if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
@@ -363,11 +397,211 @@ void HFGui::on_cutPushButton_clicked()
 	cg3::BoundingBox3 bb(box.min(), box.max());
 	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(bb);
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
-	hfBoxes.push_back(hfbox);
+	hfEngine.pushBox(hfbox);
 	addAction(UserAction(mesh, hfbox));
-	mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
+
+	std::vector<uint> birthFaces;
+	uint nFaces = mesh.numberFaces();
+
+	cg3::Dcel res = cg3::DrawableDcel(cg3::libigl::difference(mesh, b, birthFaces));
+	for (cg3::Dcel::Face* f : res.faceIterator()){
+		if (birthFaces[f->id()] < nFaces){
+			f->setFlag(mesh.face(birthFaces[f->id()])->flag());
+//			if (f->flag() == 1)
+//				f->setColor(cg3::RED);
+		}
+		else{
+			f->setFlag(1);
+//			f->setColor(cg3::RED);
+		}
+	}
+
+	mesh = res;
 	mesh.update();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 
+	updateSurfaceAndvolume();
+
 	mw.canvas.update();
+}
+
+void HFGui::on_decompositionNextPushButton_clicked()
+{
+	if (remainingSurface > 0){
+		QMessageBox* box = new QMessageBox(&mw);
+		box->setWindowTitle("Remaining Surface");
+		box->setText("There is some remaining surface of the input model in the mesh.\n"
+					 "What do you want to do with that?");
+		box->addButton(QMessageBox::Ok);
+		box->button(QMessageBox::Ok)->setText("Ignore Remaining Surface");
+		box->addButton(QMessageBox::Cancel);
+		box->button(QMessageBox::Cancel)->setText("Continue Decomposition");
+		box->setEscapeButton(QMessageBox::Cancel);
+		int ret = box->exec();
+		if (ret == QMessageBox::Ok)
+			finishDecomposition();
+	}
+	else
+		finishDecomposition();
+}
+
+void HFGui::finishDecomposition()
+{
+	ui->tabWidget->setTabEnabled(3, true);
+	ui->tabWidget->setCurrentIndex(3);
+	ui->tabWidget->setTabEnabled(2, false);
+
+	if (mw.containsDrawableObject(&originalMesh)){
+		ui->restoreHighFrequenciesPushButton->setEnabled(true);
+		ui->nRestoreIterationsSpinBox->setEnabled(true);
+		ui->nRestoreIterationsLabel->setEnabled(true);
+		ui->hausDescrLabel->setEnabled(true);
+		ui->hausdorffDistanceLabel->setEnabled(true);
+	}
+}
+
+void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
+{
+	bool b = arg1 == Qt::Checked;
+	ui->pxTestRadioButton->setEnabled(b);
+	ui->pyTestRadioButton->setEnabled(b);
+	ui->pzTestRadioButton->setEnabled(b);
+	ui->mxTestRadioButton->setEnabled(b);
+	ui->myTestRadioButton->setEnabled(b);
+	ui->mzTestRadioButton->setEnabled(b);
+	if (b){
+		ui->pxTestRadioButton->toggle();
+		cg3::Vec3 dir = cg3::X_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
+	else{
+		mesh.setFaceColors(cg3::GREY);
+		mesh.update();
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_pxTestRadioButton_toggled(bool checked)
+{
+	if (checked){
+		cg3::Vec3 dir = cg3::X_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_pyTestRadioButton_toggled(bool checked)
+{
+	if (checked){
+		cg3::Vec3 dir = cg3::Y_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_pzTestRadioButton_toggled(bool checked)
+{
+	if (checked){
+		cg3::Vec3 dir = cg3::Z_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_mxTestRadioButton_toggled(bool checked)
+{
+	if (checked){
+		cg3::Vec3 dir = -cg3::X_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_myTestRadioButton_toggled(bool checked)
+{
+	if (checked){
+		cg3::Vec3 dir = -cg3::Y_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
+}
+
+void HFGui::on_mzTestRadioButton_toggled(bool checked)
+{
+	if (checked){
+		cg3::Vec3 dir = -cg3::Z_AXIS;
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
+				if (f->normal().dot(dir) >= -cg3::EPSILON)
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+		mesh.update();
+		mw.canvas.update();
+	}
 }
