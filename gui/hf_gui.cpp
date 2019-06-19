@@ -20,6 +20,7 @@ HFGui::HFGui(QWidget *parent) :
 	ui(new Ui::HFGui),
 	mw((cg3::viewer::MainWindow&)*parent),
 	actualRotationMatrix(Eigen::Matrix3d::Identity()),
+	actualTab(0),
 	rotatableMesh(mw.canvas),
 	box(mw.canvas),
 	actualAction(0)
@@ -86,6 +87,14 @@ void HFGui::updateSurfaceAndvolume()
 	ui->remainingSurfaceLabel->setText(QString::fromStdString(std::to_string(percS)) + " %");
 }
 
+void HFGui::changeTab(uint tab)
+{
+	ui->tabWidget->setTabEnabled(actualTab, false);
+	ui->tabWidget->setTabEnabled(tab, true);
+	ui->tabWidget->setCurrentIndex(tab);
+	actualTab = tab;
+}
+
 void HFGui::undo()
 {
 	if (actualAction != 0){
@@ -99,10 +108,16 @@ void HFGui::undo()
 				mw.deleteDrawableObject(&originalMesh);
 				mw.setDrawableObjectName(&mesh, "Loaded Mesh");
 			}
+			totalVolume = mesh.volume();
+			totalSurface = mesh.surfaceArea();
+			remainingVolume = totalVolume;
+			remainingSurface = totalSurface;
+			changeTab(actions[actualAction].tab());
 			break;
 		case UserAction::ROTATE :
 			mesh = actions[actualAction].mesh();
 			actualRotationMatrix = actions[actualAction].actualRotationMatrix(); //avoid numerical errors
+			changeTab(actions[actualAction].tab());
 			break;
 		case UserAction::CUT :
 			bool b = mesh.isVisible();
@@ -112,6 +127,11 @@ void HFGui::undo()
 			hfEngine.popBox();
 			mw.setDrawableObjectVisibility(&mesh, b);
 			updateSurfaceAndvolume();
+			changeTab(actions[actualAction].tab());
+			if (remainingVolume == totalVolume){
+				ui->flipAngleSpinBox->setEnabled(true);
+				ui->lightToleranceSpinBox->setEnabled(true);
+			}
 			break;
 		}
 		mesh.update();
@@ -135,11 +155,17 @@ void HFGui::redo()
 			}
 			mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
 			hfEngine.setMesh(mesh);
+			totalVolume = mesh.volume();
+			totalSurface = mesh.surfaceArea();
+			remainingVolume = totalVolume;
+			remainingSurface = totalSurface;
+			changeTab(0);
 			break;
 		case UserAction::ROTATE :
 			rot = actions[actualAction].rotationMatrix();
 			actualRotationMatrix *= rot;
 			mesh.rotate(rot);
+			changeTab(1);
 			break;
 		case UserAction::CUT :
 			bool v = mesh.isVisible();
@@ -150,6 +176,9 @@ void HFGui::redo()
 			hfEngine.pushBox(actions[actualAction].box());
 			mw.setDrawableObjectVisibility(&mesh, v);
 			updateSurfaceAndvolume();
+			changeTab(2);
+			ui->flipAngleSpinBox->setEnabled(false);
+			ui->lightToleranceSpinBox->setEnabled(false);
 			break;
 		}
 		mesh.update();
@@ -185,6 +214,7 @@ void HFGui::on_loadMeshPushButton_clicked()
 			ui->tabWidget->setTabEnabled(3, false);
 			ui->tabWidget->setTabEnabled(4, false);
 			ui->testFrame->setEnabled(true);
+			actualTab = 0;
 		}
 	}
 }
@@ -216,7 +246,7 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 		firstSmooth = true;
 	}
-	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth));
+	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth, actualTab));
 	mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
 	mesh.update();
 	mesh.setFaceFlags(0);
@@ -230,9 +260,11 @@ void HFGui::on_smoothingNextPushButton_clicked()
 {
 	box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 	mw.pushDrawableObject(&box, "box");
-	ui->tabWidget->setTabEnabled(1, true);
-	ui->tabWidget->setCurrentIndex(1);
-	ui->tabWidget->setTabEnabled(0, false);
+	changeTab(1);
+	totalVolume = mesh.volume();
+	totalSurface = mesh.surfaceArea();
+	remainingVolume = totalVolume;
+	remainingSurface = totalSurface;
 	mw.canvas.update();
 }
 
@@ -271,7 +303,7 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	std::vector<cg3::Vec3> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
 	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
 	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
-	addAction(UserAction(mesh, rot, actualRotationMatrix));
+	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
 	actualRotationMatrix *= rot;
 	mesh.rotate(rot);
 	treeMesh = cg3::cgal::AABBTree3(mesh);
@@ -288,7 +320,7 @@ void HFGui::on_resetRotationPushButton_clicked()
 void HFGui::on_manualOrientationDonePushButton_clicked()
 {
 	Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
-	addAction(UserAction(mesh, rot, actualRotationMatrix));
+	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
 	actualRotationMatrix *= rot;
 	mesh.rotate(rot);
 	mesh.update();
@@ -299,13 +331,11 @@ void HFGui::on_manualOrientationDonePushButton_clicked()
 
 void HFGui::on_orientationNextPushButton_clicked()
 {
-	ui->tabWidget->setTabEnabled(2, true);
-	ui->tabWidget->setCurrentIndex(2);
-	ui->tabWidget->setTabEnabled(1, false);
-	totalVolume = mesh.volume();
-	totalSurface = mesh.surfaceArea();
-	remainingVolume = totalVolume;
-	remainingSurface = totalSurface;
+	changeTab(2);
+	ui->testFrame->setEnabled(false);
+
+	box.setDrawArrow(true);
+	mw.canvas.update();
 }
 
 void HFGui::on_pxRadioButton_toggled(bool checked)
@@ -360,8 +390,8 @@ void HFGui::on_colorAllTrisPushButton_clicked()
 {
 	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
 	for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-		if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-			if (f->normal().dot(dir) >= -cg3::EPSILON)
+		if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+			if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 				f->setColor(cg3::GREEN);
 			else
 				f->setColor(cg3::YELLOW);
@@ -379,8 +409,8 @@ void HFGui::on_containedTrisPushButton_clicked()
 	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
 	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox3(box.min(), box.max()));
 	for(const cg3::Dcel::Face* f : lf){
-		if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-			if (f->normal().dot(dir) >= -cg3::EPSILON)
+		if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+			if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 				mesh.face(f->id())->setColor(cg3::GREEN);
 			else
 				mesh.face(f->id())->setColor(cg3::YELLOW);
@@ -394,11 +424,14 @@ void HFGui::on_containedTrisPushButton_clicked()
 
 void HFGui::on_cutPushButton_clicked()
 {
+	ui->flipAngleSpinBox->setEnabled(false);
+	ui->lightToleranceSpinBox->setEnabled(false);
+
 	cg3::BoundingBox3 bb(box.min(), box.max());
 	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(bb);
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
 	hfEngine.pushBox(hfbox);
-	addAction(UserAction(mesh, hfbox));
+	addAction(UserAction(mesh, hfbox, actualTab));
 
 	std::vector<uint> birthFaces;
 	uint nFaces = mesh.numberFaces();
@@ -447,9 +480,7 @@ void HFGui::on_decompositionNextPushButton_clicked()
 
 void HFGui::finishDecomposition()
 {
-	ui->tabWidget->setTabEnabled(3, true);
-	ui->tabWidget->setCurrentIndex(3);
-	ui->tabWidget->setTabEnabled(2, false);
+	changeTab(3);
 
 	if (mw.containsDrawableObject(&originalMesh)){
 		ui->restoreHighFrequenciesPushButton->setEnabled(true);
@@ -457,7 +488,39 @@ void HFGui::finishDecomposition()
 		ui->nRestoreIterationsLabel->setEnabled(true);
 		ui->hausDescrLabel->setEnabled(true);
 		ui->hausdorffDistanceLabel->setEnabled(true);
+		originalMesh = hfEngine.originalMesh();
+		mw.refreshDrawableObject(&originalMesh);
 	}
+
+	mw.deleteDrawableObject(&box);
+	mesh = hfEngine.mesh();
+	mw.refreshDrawableObject(&mesh);
+
+	mw.canvas.update();
+}
+
+void HFGui::on_restoreHighFrequenciesPushButton_clicked()
+{
+	hfEngine.restoreHighFrequencies(ui->nIterationsSpinBox->value(), std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180)));
+	mesh = hfEngine.mesh();
+	mw.refreshDrawableObject(&mesh);
+
+	mw.canvas.update();
+}
+
+void HFGui::on_computeDecompositionPushButton_clicked()
+{
+	std::vector<cg3::Dcel> dec = hfEngine.decomposition();
+	uint i = 0;
+	for (const cg3::Dcel& d : dec)
+		hfDecomposition.pushBack(d, "Block " + std::to_string(i));
+
+	mw.setDrawableObjectVisibility(&mesh, false);
+	mw.setDrawableObjectVisibility(&originalMesh, false);
+	mw.pushDrawableObject(&hfDecomposition, "Decomposition");
+	mw.canvas.update();
+	ui->exportDecompositionPushButton->setEnabled(true);
+	ui->nextPostProcessingPushButton->setEnabled(true);
 }
 
 void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
@@ -473,8 +536,8 @@ void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
 		ui->pxTestRadioButton->toggle();
 		cg3::Vec3 dir = cg3::X_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);
@@ -497,8 +560,8 @@ void HFGui::on_pxTestRadioButton_toggled(bool checked)
 	if (checked){
 		cg3::Vec3 dir = cg3::X_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);
@@ -516,8 +579,8 @@ void HFGui::on_pyTestRadioButton_toggled(bool checked)
 	if (checked){
 		cg3::Vec3 dir = cg3::Y_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);
@@ -535,8 +598,8 @@ void HFGui::on_pzTestRadioButton_toggled(bool checked)
 	if (checked){
 		cg3::Vec3 dir = cg3::Z_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);
@@ -554,8 +617,8 @@ void HFGui::on_mxTestRadioButton_toggled(bool checked)
 	if (checked){
 		cg3::Vec3 dir = -cg3::X_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);
@@ -573,8 +636,8 @@ void HFGui::on_myTestRadioButton_toggled(bool checked)
 	if (checked){
 		cg3::Vec3 dir = -cg3::Y_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);
@@ -592,8 +655,8 @@ void HFGui::on_mzTestRadioButton_toggled(bool checked)
 	if (checked){
 		cg3::Vec3 dir = -cg3::Z_AXIS;
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(98 * (M_PI / 180))){
-				if (f->normal().dot(dir) >= -cg3::EPSILON)
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
 					f->setColor(cg3::GREEN);
 				else
 					f->setColor(cg3::YELLOW);

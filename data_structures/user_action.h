@@ -15,9 +15,9 @@ class UserAction
 public:
 	UserAction();
 
-	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix, const Eigen::Matrix3d& actualRotationMatrix);
-	UserAction(const cg3::Dcel& mesh, const HFBox& box);
-	UserAction(const cg3::Dcel& mesh, uint nIters, double lambda, double mu, bool firstSmooth);
+	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix, const Eigen::Matrix3d& actualRotationMatrix, uint tab);
+	UserAction(const cg3::Dcel& mesh, const HFBox& box, uint tab);
+	UserAction(const cg3::Dcel& mesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab);
 
 	typedef enum {SMOOTHING, ROTATE, CUT} ActionType;
 
@@ -31,6 +31,7 @@ public:
 	Eigen::Matrix3d rotationMatrix() const;
 	Eigen::Matrix3d actualRotationMatrix() const;
 	HFBox box() const;
+	uint tab() const;
 
 private:
 	ActionType actionType;
@@ -41,6 +42,7 @@ private:
 	Eigen::Matrix3d _rotation;
 	Eigen::Matrix3d actualRot;
 	HFBox _box;
+	uint _tab;
 };
 
 #endif // USER_ACTION_H

@@ -49,6 +49,7 @@ message($$MODULES)
 HEADERS += \
     data_structures/hf_box.h \
     data_structures/hf_engine.h \
+    data_structures/high_frequencies_restore.h \
     data_structures/user_action.h \
     gui/arrow.h \
     gui/hf_gui.h \
@@ -60,6 +61,7 @@ HEADERS += \
 SOURCES += \
     data_structures/hf_box.cpp \
     data_structures/hf_engine.cpp \
+    data_structures/high_frequencies_restore.cpp \
     data_structures/user_action.cpp \
     gui/hf_gui.cpp \
     gui/manipulable_boundingbox.cpp \

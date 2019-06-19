@@ -15,15 +15,19 @@ class HFEngine
 public:
 	HFEngine();
 	void clear();
-	void setMesh(const cg3::Dcel& mesh);
-	void setOriginalMesh(const cg3::Dcel& mesh);
+	void setMesh(const cg3::Dcel& _mesh);
+	void setOriginalMesh(const cg3::Dcel& _mesh);
 	void setUseSmoothedMesh(bool b);
 	void pushBox(const HFBox& box);
 	void popBox();
+	void restoreHighFrequencies(uint nIterations, double flipAngle);
+	std::vector<cg3::Dcel> decomposition() const;
+	cg3::Dcel mesh() const;
+	cg3::Dcel originalMesh() const;
 
 private:
-	cg3::Dcel mesh;
-	cg3::Dcel originalMesh;
+	cg3::Dcel _mesh;
+	cg3::Dcel _originalMesh;
 	bool useSmoothedMesh;
 	std::vector<HFBox> boxes;
 };

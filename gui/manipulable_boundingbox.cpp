@@ -11,6 +11,7 @@
 
 ManipulableBoundingBox::ManipulableBoundingBox(cg3::viewer::GLCanvas& canvas) :
 	canvas(canvas),
+	_drawArrow(false),
 	df(1),
 	_min(canvas),
 	_max(canvas),
@@ -86,51 +87,53 @@ void ManipulableBoundingBox::drawSpheres() const
 
 void ManipulableBoundingBox::drawArrow() const
 {
-	cg3::Point3d base = (_min.translation() + _max.translation()) * 0.5;
-	cg3::Point3d minBody, maxBody, arrowPoint;
-	cg3::Color col;
-	switch (millingDir) {
-	case HFBox::PLUS_X :
-		col = cg3::RED;
-		minBody = cg3::Point3d(_max.translation().x()+df, base.y(), base.z());
-		maxBody = cg3::Point3d(_max.translation().x()+df*1.5, base.y(), base.z());
-		arrowPoint = maxBody + cg3::Point3d(df/4,0,0);
-		break;
-	case HFBox::PLUS_Y :
-		col = cg3::GREEN;
-		minBody = cg3::Point3d(base.x(), _max.translation().y()+df, base.z());
-		maxBody = cg3::Point3d(base.x(), _max.translation().y()+df*1.5 ,base.z());
-		arrowPoint = maxBody + cg3::Point3d(0,df/4,0);
-		break;
-	case HFBox::PLUS_Z :
-		col = cg3::BLUE;
-		minBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df);
-		maxBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df*1.5);
-		arrowPoint = maxBody + cg3::Point3d(0,0,df/4);
-		break;
-	case HFBox::MINUS_X :
-		col = cg3::RED;
-		minBody = cg3::Point3d(_min.translation().x()-df, base.y(), base.z());
-		maxBody = cg3::Point3d(_min.translation().x()-df*1.5, base.y(), base.z());
-		arrowPoint = maxBody - cg3::Point3d(df/4,0,0);
-		break;
-	case HFBox::MINUS_Y :
-		col = cg3::GREEN;
-		minBody = cg3::Point3d(base.x(), _min.translation().y()-df, base.z());
-		maxBody = cg3::Point3d(base.x(), _min.translation().y()-df*1.5 ,base.z());
-		arrowPoint = maxBody - cg3::Point3d(0,df/4,0);
-		break;
-	case HFBox::MINUS_Z :
-		col = cg3::BLUE;
-		minBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df);
-		maxBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df*1.5);
-		arrowPoint = maxBody - cg3::Point3d(0,0,df/4);
-		break;
-	default:
-		assert(0);
+	if (_drawArrow) {
+		cg3::Point3d base = (_min.translation() + _max.translation()) * 0.5;
+		cg3::Point3d minBody, maxBody, arrowPoint;
+		cg3::Color col;
+		switch (millingDir) {
+		case HFBox::PLUS_X :
+			col = cg3::RED;
+			minBody = cg3::Point3d(_max.translation().x()+df, base.y(), base.z());
+			maxBody = cg3::Point3d(_max.translation().x()+df*1.5, base.y(), base.z());
+			arrowPoint = maxBody + cg3::Point3d(df/4,0,0);
+			break;
+		case HFBox::PLUS_Y :
+			col = cg3::GREEN;
+			minBody = cg3::Point3d(base.x(), _max.translation().y()+df, base.z());
+			maxBody = cg3::Point3d(base.x(), _max.translation().y()+df*1.5 ,base.z());
+			arrowPoint = maxBody + cg3::Point3d(0,df/4,0);
+			break;
+		case HFBox::PLUS_Z :
+			col = cg3::BLUE;
+			minBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df);
+			maxBody = cg3::Point3d(base.x(), base.y(),_max.translation().z()+df*1.5);
+			arrowPoint = maxBody + cg3::Point3d(0,0,df/4);
+			break;
+		case HFBox::MINUS_X :
+			col = cg3::RED;
+			minBody = cg3::Point3d(_min.translation().x()-df, base.y(), base.z());
+			maxBody = cg3::Point3d(_min.translation().x()-df*1.5, base.y(), base.z());
+			arrowPoint = maxBody - cg3::Point3d(df/4,0,0);
+			break;
+		case HFBox::MINUS_Y :
+			col = cg3::GREEN;
+			minBody = cg3::Point3d(base.x(), _min.translation().y()-df, base.z());
+			maxBody = cg3::Point3d(base.x(), _min.translation().y()-df*1.5 ,base.z());
+			arrowPoint = maxBody - cg3::Point3d(0,df/4,0);
+			break;
+		case HFBox::MINUS_Z :
+			col = cg3::BLUE;
+			minBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df);
+			maxBody = cg3::Point3d(base.x(), base.y(),_min.translation().z()-df*1.5);
+			arrowPoint = maxBody - cg3::Point3d(0,0,df/4);
+			break;
+		default:
+			assert(0);
+		}
+		cg3::opengl::drawCylinder(minBody, maxBody, df/8, df/8, col);
+		cg3::opengl::drawCylinder(maxBody, arrowPoint, df/5, 0, col);
 	}
-	cg3::opengl::drawCylinder(minBody, maxBody, df/8, df/8, col);
-	cg3::opengl::drawCylinder(maxBody, arrowPoint, df/5, 0, col);
 }
 
 void ManipulableBoundingBox::checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera)
@@ -147,4 +150,9 @@ void ManipulableBoundingBox::checkIfGrabsMouse(int x, int y, const qglviewer::Ca
 		canvas.setMouseBinding(Qt::NoModifier, Qt::LeftButton, QGLViewer::CAMERA,
 						QGLViewer::ROTATE);
 	}
+}
+
+void ManipulableBoundingBox::setDrawArrow(bool b)
+{
+	_drawArrow = b;
 }

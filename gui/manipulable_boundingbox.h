@@ -29,6 +29,8 @@ public:
 	void drawHighlighted() const;
 	void checkIfGrabsMouse(int x, int y, const qglviewer::Camera * const camera);
 
+	void setDrawArrow(bool b);
+
 	void set(const cg3::Point3d &min, const cg3::Point3d &max);
 	void setMillingDirection(HFBox::MillingDir dir);
 	HFBox::MillingDir millingDirection() const {return millingDir;};
@@ -39,6 +41,7 @@ protected:
 	void drawSpheres() const;
 	void drawArrow() const;
 	cg3::viewer::GLCanvas& canvas;
+	bool _drawArrow;
 	double df;
 	ManipulableSphere _min, _max;
 	HFBox::MillingDir millingDir;

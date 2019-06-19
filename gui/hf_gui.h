@@ -36,6 +36,7 @@ public:
 	void clear();
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
+	void changeTab(uint tab);
 
 public slots:
 	void undo();
@@ -91,6 +92,12 @@ private slots:
 
 	void finishDecomposition();
 
+	//post processing
+
+	void on_restoreHighFrequenciesPushButton_clicked();
+
+	void on_computeDecompositionPushButton_clicked();
+
 	//test frame
 	void on_testOrTrianglesCheckBox_stateChanged(int arg1);
 
@@ -120,10 +127,9 @@ private:
 	double totalSurface, totalVolume;
 	double remainingSurface, remainingVolume;
 	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
+	uint actualTab;
 
 	HFEngine hfEngine;
-
-
 
 	RotatableMesh rotatableMesh;
 	ManipulableBoundingBox box;

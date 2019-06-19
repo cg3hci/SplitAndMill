@@ -10,28 +10,31 @@ UserAction::UserAction()
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix, const Eigen::Matrix3d &actualRotationMatrix) :
+UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix, const Eigen::Matrix3d &actualRotationMatrix, uint tab) :
 	actionType(ROTATE),
 	_mesh(mesh),
 	_rotation(rotMatrix),
-	actualRot(actualRotationMatrix)
+	actualRot(actualRotationMatrix),
+	_tab(tab)
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const HFBox &box) :
+UserAction::UserAction(const cg3::Dcel &mesh, const HFBox &box, uint tab) :
 	actionType(CUT),
 	_mesh(mesh),
-	_box(box)
+	_box(box),
+	_tab(tab)
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, uint nIters, double lambda, double mu, bool firstSmooth) :
+UserAction::UserAction(const cg3::Dcel &mesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab) :
 	actionType(SMOOTHING),
 	_mesh(mesh),
 	_lambda(lambda),
 	_mu(mu),
 	nIt(nIters),
-	firstSmooth(firstSmooth)
+	firstSmooth(firstSmooth),
+	_tab(tab)
 {
 }
 
@@ -78,4 +81,9 @@ Eigen::Matrix3d UserAction::actualRotationMatrix() const
 HFBox UserAction::box() const
 {
 	return _box;
+}
+
+uint UserAction::tab() const
+{
+	return _tab;
 }
