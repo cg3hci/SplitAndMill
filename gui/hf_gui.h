@@ -37,6 +37,8 @@ public:
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
 	void changeTab(uint tab);
+	int selectedTestdirection() const;
+	void colorTestMesh();
 
 public slots:
 	void undo();

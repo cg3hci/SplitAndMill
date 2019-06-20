@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of cg3lib: https://github.com/cg3hci/cg3lib
  * This Source Code Form is subject to the terms of the GNU GPL 3.0
  *
@@ -93,6 +93,59 @@ void HFGui::changeTab(uint tab)
 	ui->tabWidget->setTabEnabled(tab, true);
 	ui->tabWidget->setCurrentIndex(tab);
 	actualTab = tab;
+	if (tab >= 2){
+		ui->testOrTrianglesCheckBox->setChecked(false);
+		ui->testFrame->setEnabled(false);
+	}
+	else {
+		ui->testFrame->setEnabled(true);
+	}
+}
+
+int HFGui::selectedTestdirection() const
+{
+	if (ui->testOrTrianglesCheckBox->isChecked()){
+		if (ui->pxTestRadioButton->isChecked())
+			return 0;
+		if (ui->pyTestRadioButton->isChecked())
+			return 1;
+		if (ui->pzTestRadioButton->isChecked())
+			return 2;
+		if (ui->mxTestRadioButton->isChecked())
+			return 3;
+		if (ui->myTestRadioButton->isChecked())
+			return 4;
+		if (ui->mzTestRadioButton->isChecked())
+			return 5;
+	}
+	else {
+		return -1;
+	}
+	return -1;
+}
+
+void HFGui::colorTestMesh()
+{
+	int d = selectedTestdirection();
+	if (d < 0){
+		mesh.setFaceColors(cg3::GREY);
+
+	}
+	else {
+		cg3::Vec3 dir = cg3::AXIS [d];
+		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
+			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
+					f->setColor(cg3::GREEN);
+				else
+					f->setColor(cg3::YELLOW);
+			}
+			else
+				f->setColor(cg3::RED);
+		}
+	}
+	mesh.update();
+	mw.canvas.update();
 }
 
 void HFGui::undo()
@@ -160,12 +213,14 @@ void HFGui::redo()
 			remainingVolume = totalVolume;
 			remainingSurface = totalSurface;
 			changeTab(0);
+			colorTestMesh();
 			break;
 		case UserAction::ROTATE :
 			rot = actions[actualAction].rotationMatrix();
 			actualRotationMatrix *= rot;
 			mesh.rotate(rot);
 			changeTab(1);
+			colorTestMesh();
 			break;
 		case UserAction::CUT :
 			bool v = mesh.isVisible();
@@ -238,6 +293,7 @@ void HFGui::on_exportDecompositionPushButton_clicked()
 void HFGui::on_taubinSmoothingPushButton_clicked()
 {
 	bool firstSmooth = false;
+	mesh.setFaceColors(cg3::GREY);
 	if (!mw.containsDrawableObject(&originalMesh)){
 		originalMesh = mesh;
 		originalMesh.update();
@@ -248,9 +304,10 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 	}
 	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth, actualTab));
 	mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
-	mesh.update();
 	mesh.setFaceFlags(0);
+	mesh.setFaceColors(cg3::GREY);
 	hfEngine.setMesh(mesh);
+	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 
 	mw.canvas.update();
@@ -306,8 +363,8 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
 	actualRotationMatrix *= rot;
 	mesh.rotate(rot);
+	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
-	mesh.update();
 	mw.canvas.update();
 }
 
@@ -323,7 +380,7 @@ void HFGui::on_manualOrientationDonePushButton_clicked()
 	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
 	actualRotationMatrix *= rot;
 	mesh.rotate(rot);
-	mesh.update();
+	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mw.canvas.update();
 	ui->automaticOrientationRadioButton->toggle();
@@ -332,7 +389,7 @@ void HFGui::on_manualOrientationDonePushButton_clicked()
 void HFGui::on_orientationNextPushButton_clicked()
 {
 	changeTab(2);
-	ui->testFrame->setEnabled(false);
+	colorTestMesh();
 
 	box.setDrawArrow(true);
 	mw.canvas.update();
@@ -532,139 +589,41 @@ void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
 	ui->mxTestRadioButton->setEnabled(b);
 	ui->myTestRadioButton->setEnabled(b);
 	ui->mzTestRadioButton->setEnabled(b);
-	if (b){
-		ui->pxTestRadioButton->toggle();
-		cg3::Vec3 dir = cg3::X_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
-	else{
-		mesh.setFaceColors(cg3::GREY);
-		mesh.update();
-		mw.canvas.update();
-	}
+	colorTestMesh();
 }
 
 void HFGui::on_pxTestRadioButton_toggled(bool checked)
 {
-	if (checked){
-		cg3::Vec3 dir = cg3::X_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
+	if (checked)
+		colorTestMesh();
 }
 
 void HFGui::on_pyTestRadioButton_toggled(bool checked)
 {
-	if (checked){
-		cg3::Vec3 dir = cg3::Y_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
+	if (checked)
+		colorTestMesh();
 }
 
 void HFGui::on_pzTestRadioButton_toggled(bool checked)
 {
-	if (checked){
-		cg3::Vec3 dir = cg3::Z_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
+	if (checked)
+		colorTestMesh();
 }
 
 void HFGui::on_mxTestRadioButton_toggled(bool checked)
 {
-	if (checked){
-		cg3::Vec3 dir = -cg3::X_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
+	if (checked)
+		colorTestMesh();
 }
 
 void HFGui::on_myTestRadioButton_toggled(bool checked)
 {
-	if (checked){
-		cg3::Vec3 dir = -cg3::Y_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
+	if (checked)
+		colorTestMesh();
 }
 
 void HFGui::on_mzTestRadioButton_toggled(bool checked)
 {
-	if (checked){
-		cg3::Vec3 dir = -cg3::Z_AXIS;
-		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
-			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
-				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
-					f->setColor(cg3::GREEN);
-				else
-					f->setColor(cg3::YELLOW);
-			}
-			else
-				f->setColor(cg3::RED);
-		}
-		mesh.update();
-		mw.canvas.update();
-	}
+	if (checked)
+		colorTestMesh();
 }
