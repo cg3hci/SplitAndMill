@@ -12,7 +12,7 @@
 void restoreHighHrequenciesGaussSeidel(
 		cg3::Dcel& smoothMesh,
 		const cg3::Dcel& detailMesh,
-		const std::vector<cg3::Vec3>& hfDirections,
+		const std::vector<cg3::Vec3d>& hfDirections,
 		const int nIters,
 		double flipAngle);
 

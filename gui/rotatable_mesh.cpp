@@ -40,9 +40,9 @@ void RotatableMesh::setMesh(const cg3::DrawableDcel &mesh)
 	arrow[0].rotate(cg3::Y_AXIS, -M_PI / 2);
 	arrow[1].rotate(cg3::X_AXIS, M_PI / 2);
 	double tf = (mesh.boundingBox().diag() / 2) * 0.66;
-	arrow[0].translate(cg3::Vec3(0, tf, tf));
-	arrow[1].translate(cg3::Vec3(tf, 0, tf));
-	arrow[2].translate(cg3::Vec3(tf, tf, 0));
+	arrow[0].translate(cg3::Vec3d(0, tf, tf));
+	arrow[1].translate(cg3::Vec3d(tf, 0, tf));
+	arrow[2].translate(cg3::Vec3d(tf, tf, 0));
 	for (uint i = 0; i < 3; ++i){
 		arrow[i].update();
 		bc[i] = arrow[i].barycenter();

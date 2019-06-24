@@ -15,7 +15,7 @@
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 #include <cg3/vcglib/smoothing.h>
 
-HFGui::HFGui(QWidget *parent) :
+inline HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
 	mw((cg3::viewer::MainWindow&)*parent),
@@ -39,12 +39,12 @@ HFGui::HFGui(QWidget *parent) :
 			this, SLOT(redo()));
 }
 
-HFGui::~HFGui()
+inline HFGui::~HFGui()
 {
 	delete ui;
 }
 
-void HFGui::clear()
+inline void HFGui::clear()
 {
 	mw.deleteDrawableObject(&mesh);
 	mw.deleteDrawableObject(&box);
@@ -61,7 +61,7 @@ void HFGui::clear()
 	ui->testFrame->setEnabled(false);
 }
 
-void HFGui::addAction(const UserAction &action)
+inline void HFGui::addAction(const UserAction &action)
 {
 	if(actualAction != actions.size()){
 		actions.erase(actions.begin() + actualAction, actions.end());
@@ -70,7 +70,7 @@ void HFGui::addAction(const UserAction &action)
 	actualAction++;
 }
 
-void HFGui::updateSurfaceAndvolume()
+inline void HFGui::updateSurfaceAndvolume()
 {
 	remainingSurface = 0;
 	for (cg3::Dcel::Face* f : mesh.faceIterator()){
@@ -87,7 +87,7 @@ void HFGui::updateSurfaceAndvolume()
 	ui->remainingSurfaceLabel->setText(QString::fromStdString(std::to_string(percS)) + " %");
 }
 
-void HFGui::changeTab(uint tab)
+inline void HFGui::changeTab(uint tab)
 {
 	ui->tabWidget->setTabEnabled(actualTab, false);
 	ui->tabWidget->setTabEnabled(tab, true);
@@ -102,7 +102,7 @@ void HFGui::changeTab(uint tab)
 	}
 }
 
-int HFGui::selectedTestdirection() const
+inline int HFGui::selectedTestdirection() const
 {
 	if (ui->testOrTrianglesCheckBox->isChecked()){
 		if (ui->pxTestRadioButton->isChecked())
@@ -124,7 +124,7 @@ int HFGui::selectedTestdirection() const
 	return -1;
 }
 
-void HFGui::colorTestMesh()
+inline void HFGui::colorTestMesh()
 {
 	int d = selectedTestdirection();
 	if (d < 0){
@@ -132,7 +132,7 @@ void HFGui::colorTestMesh()
 
 	}
 	else {
-		cg3::Vec3 dir = cg3::AXIS [d];
+		cg3::Vec3d dir = cg3::AXIS [d];
 		for (cg3::Dcel::Face* f : mesh.faceIterator()) {
 			if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
 				if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
@@ -148,7 +148,7 @@ void HFGui::colorTestMesh()
 	mw.canvas.update();
 }
 
-void HFGui::undo()
+inline void HFGui::undo()
 {
 	if (actualAction != 0){
 		actualAction--;
@@ -193,7 +193,7 @@ void HFGui::undo()
 	}
 }
 
-void HFGui::redo()
+inline void HFGui::redo()
 {
 	if (actualAction < actions.size()){
 		Eigen::Matrix3d rot;
@@ -243,7 +243,7 @@ void HFGui::redo()
 	}
 }
 
-void HFGui::on_loadMeshPushButton_clicked()
+inline void HFGui::on_loadMeshPushButton_clicked()
 {
 	std::string filename = lsmesh.loadDialog("Load Mesh");
 	if (filename != ""){
@@ -274,12 +274,12 @@ void HFGui::on_loadMeshPushButton_clicked()
 	}
 }
 
-void HFGui::on_clearPushButton_clicked()
+inline void HFGui::on_clearPushButton_clicked()
 {
 	clear();
 }
 
-void HFGui::on_exportDecompositionPushButton_clicked()
+inline void HFGui::on_exportDecompositionPushButton_clicked()
 {
 	std::string dir = lsmesh.directoryDialog();
 	if (dir != "") {
@@ -290,7 +290,7 @@ void HFGui::on_exportDecompositionPushButton_clicked()
 	}
 }
 
-void HFGui::on_taubinSmoothingPushButton_clicked()
+inline void HFGui::on_taubinSmoothingPushButton_clicked()
 {
 	bool firstSmooth = false;
 	mesh.setFaceColors(cg3::GREY);
@@ -313,7 +313,7 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_smoothingNextPushButton_clicked()
+inline void HFGui::on_smoothingNextPushButton_clicked()
 {
 	box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 	mw.pushDrawableObject(&box, "box");
@@ -325,7 +325,7 @@ void HFGui::on_smoothingNextPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
+inline void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
 {
 	if (checked){
 		ui->optimalOrientationPushButton->setEnabled(true);
@@ -339,7 +339,7 @@ void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
+inline void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
 {
 	if (checked){
 		ui->optimalOrientationPushButton->setEnabled(false);
@@ -354,10 +354,10 @@ void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_optimalOrientationPushButton_clicked()
+inline void HFGui::on_optimalOrientationPushButton_clicked()
 {
 	uint nDirs = ui->nDirsSpinBox->value();
-	std::vector<cg3::Vec3> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
+	std::vector<cg3::Vec3d> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
 	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
 	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
 	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
@@ -368,13 +368,13 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_resetRotationPushButton_clicked()
+inline void HFGui::on_resetRotationPushButton_clicked()
 {
 	rotatableMesh.resetRotation();
 	mw.canvas.update();
 }
 
-void HFGui::on_manualOrientationDonePushButton_clicked()
+inline void HFGui::on_manualOrientationDonePushButton_clicked()
 {
 	Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
 	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
@@ -386,7 +386,7 @@ void HFGui::on_manualOrientationDonePushButton_clicked()
 	ui->automaticOrientationRadioButton->toggle();
 }
 
-void HFGui::on_orientationNextPushButton_clicked()
+inline void HFGui::on_orientationNextPushButton_clicked()
 {
 	changeTab(2);
 	colorTestMesh();
@@ -395,7 +395,7 @@ void HFGui::on_orientationNextPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_pxRadioButton_toggled(bool checked)
+inline void HFGui::on_pxRadioButton_toggled(bool checked)
 {
 	if (checked){
 		box.setMillingDirection(HFBox::PLUS_X);
@@ -403,7 +403,7 @@ void HFGui::on_pxRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_pyRadioButton_toggled(bool checked)
+inline void HFGui::on_pyRadioButton_toggled(bool checked)
 {
 	if (checked){
 		box.setMillingDirection(HFBox::PLUS_Y);
@@ -411,7 +411,7 @@ void HFGui::on_pyRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_pzRadioButton_toggled(bool checked)
+inline void HFGui::on_pzRadioButton_toggled(bool checked)
 {
 	if (checked){
 		box.setMillingDirection(HFBox::PLUS_Z);
@@ -419,7 +419,7 @@ void HFGui::on_pzRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_mxRadioButton_toggled(bool checked)
+inline void HFGui::on_mxRadioButton_toggled(bool checked)
 {
 	if (checked){
 		box.setMillingDirection(HFBox::MINUS_X);
@@ -427,7 +427,7 @@ void HFGui::on_mxRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_myRadioButton_toggled(bool checked)
+inline void HFGui::on_myRadioButton_toggled(bool checked)
 {
 	if (checked){
 		box.setMillingDirection(HFBox::MINUS_Y);
@@ -435,7 +435,7 @@ void HFGui::on_myRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_mzRadioButton_toggled(bool checked)
+inline void HFGui::on_mzRadioButton_toggled(bool checked)
 {
 	if (checked){
 		box.setMillingDirection(HFBox::MINUS_Z);
@@ -443,9 +443,9 @@ void HFGui::on_mzRadioButton_toggled(bool checked)
 	}
 }
 
-void HFGui::on_colorAllTrisPushButton_clicked()
+inline void HFGui::on_colorAllTrisPushButton_clicked()
 {
-	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
+	cg3::Vec3d dir = cg3::AXIS[box.millingDirection()];
 	for (cg3::Dcel::Face* f : mesh.faceIterator()) {
 		if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
 			if (f->normal().dot(dir) >= std::cos(ui->lightToleranceSpinBox->value() * (M_PI / 180)))
@@ -460,10 +460,10 @@ void HFGui::on_colorAllTrisPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_containedTrisPushButton_clicked()
+inline void HFGui::on_containedTrisPushButton_clicked()
 {
 	mesh.setFaceColors(cg3::GREY);
-	cg3::Vec3 dir = cg3::AXIS[box.millingDirection()];
+	cg3::Vec3d dir = cg3::AXIS[box.millingDirection()];
 	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox3(box.min(), box.max()));
 	for(const cg3::Dcel::Face* f : lf){
 		if (f->normal().dot(dir) >= std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
@@ -479,7 +479,7 @@ void HFGui::on_containedTrisPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_cutPushButton_clicked()
+inline void HFGui::on_cutPushButton_clicked()
 {
 	ui->flipAngleSpinBox->setEnabled(false);
 	ui->lightToleranceSpinBox->setEnabled(false);
@@ -515,7 +515,7 @@ void HFGui::on_cutPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_decompositionNextPushButton_clicked()
+inline void HFGui::on_decompositionNextPushButton_clicked()
 {
 	if (remainingSurface > 0){
 		QMessageBox* box = new QMessageBox(&mw);
@@ -535,7 +535,7 @@ void HFGui::on_decompositionNextPushButton_clicked()
 		finishDecomposition();
 }
 
-void HFGui::finishDecomposition()
+inline void HFGui::finishDecomposition()
 {
 	changeTab(3);
 
@@ -556,7 +556,7 @@ void HFGui::finishDecomposition()
 	mw.canvas.update();
 }
 
-void HFGui::on_restoreHighFrequenciesPushButton_clicked()
+inline void HFGui::on_restoreHighFrequenciesPushButton_clicked()
 {
 	hfEngine.restoreHighFrequencies(ui->nIterationsSpinBox->value(), std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180)));
 	mesh = hfEngine.mesh();
@@ -565,7 +565,7 @@ void HFGui::on_restoreHighFrequenciesPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_computeDecompositionPushButton_clicked()
+inline void HFGui::on_computeDecompositionPushButton_clicked()
 {
 	std::vector<cg3::Dcel> dec = hfEngine.decomposition();
 	uint i = 0;
@@ -580,7 +580,7 @@ void HFGui::on_computeDecompositionPushButton_clicked()
 	ui->nextPostProcessingPushButton->setEnabled(true);
 }
 
-void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
+inline void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
 {
 	bool b = arg1 == Qt::Checked;
 	ui->pxTestRadioButton->setEnabled(b);
@@ -592,37 +592,37 @@ void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
 	colorTestMesh();
 }
 
-void HFGui::on_pxTestRadioButton_toggled(bool checked)
+inline void HFGui::on_pxTestRadioButton_toggled(bool checked)
 {
 	if (checked)
 		colorTestMesh();
 }
 
-void HFGui::on_pyTestRadioButton_toggled(bool checked)
+inline void HFGui::on_pyTestRadioButton_toggled(bool checked)
 {
 	if (checked)
 		colorTestMesh();
 }
 
-void HFGui::on_pzTestRadioButton_toggled(bool checked)
+inline void HFGui::on_pzTestRadioButton_toggled(bool checked)
 {
 	if (checked)
 		colorTestMesh();
 }
 
-void HFGui::on_mxTestRadioButton_toggled(bool checked)
+inline void HFGui::on_mxTestRadioButton_toggled(bool checked)
 {
 	if (checked)
 		colorTestMesh();
 }
 
-void HFGui::on_myTestRadioButton_toggled(bool checked)
+inline void HFGui::on_myTestRadioButton_toggled(bool checked)
 {
 	if (checked)
 		colorTestMesh();
 }
 
-void HFGui::on_mzTestRadioButton_toggled(bool checked)
+inline void HFGui::on_mzTestRadioButton_toggled(bool checked)
 {
 	if (checked)
 		colorTestMesh();

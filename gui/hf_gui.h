@@ -140,4 +140,6 @@ private:
 	uint actualAction;
 };
 
+#include "hf_gui.cpp"
+
 #endif // CG3_EXAMPLE_MANAGER_H

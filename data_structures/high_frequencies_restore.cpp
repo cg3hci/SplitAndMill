@@ -9,18 +9,18 @@
 
 bool validateMove(
 		const cg3::Dcel::Vertex* v,
-        cg3::Vec3 dir,
+		cg3::Vec3d dir,
         const cg3::Point3d& vid_new_pos,
         double flipAngle)
 {
-	if (dir == cg3::Vec3()) return true;
+	if (dir == cg3::Vec3d()) return true;
 	for(const cg3::Dcel::Face* f : v->incidentFaceIterator()) {
 		cg3::Triangle3d tri;
 		tri[0] = f->vertex1() == v ? vid_new_pos : f->vertex1()->coordinate();
 		tri[1] = f->vertex2() == v ? vid_new_pos : f->vertex2()->coordinate();
 		tri[2] = f->vertex3() == v ? vid_new_pos : f->vertex3()->coordinate();
 
-		cg3::Vec3 n = tri.normal();
+		cg3::Vec3d n = tri.normal();
 
 		if (n.dot(dir) < flipAngle)
 			return false;
@@ -31,9 +31,9 @@ bool validateMove(
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-std::vector<cg3::Vec3> differentialCoordinates(const cg3::Dcel& m)
+std::vector<cg3::Vec3d> differentialCoordinates(const cg3::Dcel& m)
 {
-	std::vector<cg3::Vec3> diffCoords;
+	std::vector<cg3::Vec3d> diffCoords;
 	diffCoords.resize(m.numberVertices());
 
     #pragma omp parallel for
@@ -56,12 +56,11 @@ std::vector<cg3::Vec3> differentialCoordinates(const cg3::Dcel& m)
 void restoreHighHrequenciesGaussSeidel(
         cg3::Dcel& smoothMesh,
         const cg3::Dcel& detailMesh,
-        const std::vector<cg3::Vec3>& hfDirections,
+		const std::vector<cg3::Vec3d>& hfDirections,
         const int nIters,
         double flipAngle)
 {
-	std::vector<cinolib::vec3d> diff_coords;
-	std::vector<cg3::Vec3> diffCoords = differentialCoordinates(detailMesh);
+	std::vector<cg3::Vec3d> diffCoords = differentialCoordinates(detailMesh);
 
 	for(int i=0; i<nIters; ++i) {
         #pragma omp parallel for
@@ -69,7 +68,7 @@ void restoreHighHrequenciesGaussSeidel(
 			//std::cerr << vid << "\n";
 			cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
 			if (v != nullptr){
-				cg3::Vec3  gauss_iter(0,0,0);
+				cg3::Vec3d  gauss_iter(0,0,0);
 				double w = 1.0 / v->cardinality();
 				for(cg3::Dcel::Vertex* adj : v->adjacentVertexIterator()) {
 					gauss_iter += w * adj->coordinate();

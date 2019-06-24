@@ -54,7 +54,7 @@ void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 	Eigen::Matrix3d actualRot = Eigen::Matrix3d::Identity();
 	cg3::Dcel m = _mesh;
 	cg3::cgal::AABBTree3 tree(m);
-	std::vector<cg3::Vec3> dirs(m.numberVertices(), cg3::Vec3());
+	std::vector<cg3::Vec3d> dirs(m.numberVertices(), cg3::Vec3d());
 	std::vector<bool> visited(m.numberVertices(), false);
 
 	for (const HFBox& b : boxes){
@@ -71,7 +71,7 @@ void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 			for (const cg3::Dcel::Vertex* v : f->incidentVertexIterator()){
 				if (!visited[v->id()] && b.isInside(v->coordinate())){
 					visited[v->id()] = true;
-					cg3::Vec3 dir = cg3::AXIS[b.millingDirection()];
+					cg3::Vec3d dir = cg3::AXIS[b.millingDirection()];
 					dir.rotate(actualRot.transpose());
 					dirs[v->id()] = dir;
 				}

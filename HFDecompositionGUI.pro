@@ -39,8 +39,8 @@ CONFIG += c++11
 #   CG3_CINOLIB             -- CinoLib interface
 #
 # Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_MESHES
-CONFIG += CG3_ALL
-CONFIG -= CG3_CINOLIB
+CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_ALGORITHMS CG3_MESHES CG3_CGAL CG3_LIBIGL CG3_VCGLIB CG3_CINOLIB
+#CONFIG += CG3_STATIC
 
 # Include the chosen modules
 include (cg3lib/cg3.pri)
@@ -63,7 +63,7 @@ SOURCES += \
     data_structures/hf_engine.cpp \
     data_structures/high_frequencies_restore.cpp \
     data_structures/user_action.cpp \
-    gui/hf_gui.cpp \
+#    gui/hf_gui.cpp \
     gui/manipulable_boundingbox.cpp \
     gui/manipulable_sphere.cpp \
     gui/rotatable_mesh.cpp \

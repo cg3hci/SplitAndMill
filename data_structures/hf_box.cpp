@@ -12,7 +12,7 @@ HFBox::HFBox()
 
 }
 
-HFBox::HFBox(const cg3::Point3d &min, const cg3::Point3d &max, const cg3::Vec3 &dir, const Eigen::Matrix3d &rot) :
+HFBox::HFBox(const cg3::Point3d &min, const cg3::Point3d &max, const cg3::Vec3d &dir, const Eigen::Matrix3d &rot) :
 	cg3::BoundingBox3(min, max),
 	rot(rot)
 {
