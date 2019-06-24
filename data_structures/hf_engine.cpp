@@ -8,6 +8,7 @@
 
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 #include <cg3/libigl/booleans.h>
+#include <cg3/libigl/mesh_distance.h>
 #include <cg3/cgal/aabb_tree3.h>
 
 #include "high_frequencies_restore.h"
@@ -20,7 +21,7 @@ HFEngine::HFEngine() :
 void HFEngine::clear()
 {
 	useSmoothedMesh = false;
-	boxes.clear();
+	_boxes.clear();
 }
 
 void HFEngine::setMesh(const cg3::Dcel &mesh)
@@ -41,15 +42,20 @@ void HFEngine::setUseSmoothedMesh(bool b)
 
 void HFEngine::pushBox(const HFBox &box)
 {
-	boxes.push_back(box);
+	_boxes.push_back(box);
 }
 
 void HFEngine::popBox()
 {
-	boxes.pop_back();
+	_boxes.pop_back();
 }
 
-void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
+const std::vector<HFBox>& HFEngine::boxes() const
+{
+	return _boxes;
+}
+
+std::vector<cg3::Vec3d> HFEngine::restoreHighFrequenciesDirs() const
 {
 	Eigen::Matrix3d actualRot = Eigen::Matrix3d::Identity();
 	cg3::Dcel m = _mesh;
@@ -57,7 +63,7 @@ void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 	std::vector<cg3::Vec3d> dirs(m.numberVertices(), cg3::Vec3d());
 	std::vector<bool> visited(m.numberVertices(), false);
 
-	for (const HFBox& b : boxes){
+	for (const HFBox& b : _boxes){
 		if (b.rotationMatrix() != actualRot){
 			actualRot = b.rotationMatrix();
 			m = _mesh;
@@ -79,7 +85,19 @@ void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 		}
 	}
 
+	return dirs;
+}
+
+void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
+{
+	std::vector<cg3::Vec3d> dirs = restoreHighFrequenciesDirs();
+
 	restoreHighHrequenciesGaussSeidel(_mesh, _originalMesh, dirs, nIterations, flipAngle);
+}
+
+double HFEngine::hausdorffDistance() const
+{
+	return cg3::libigl::hausdorffDistance(_mesh, _originalMesh);
 }
 
 std::vector<cg3::Dcel> HFEngine::decomposition() const
@@ -88,7 +106,7 @@ std::vector<cg3::Dcel> HFEngine::decomposition() const
 	//uint i = 0;
 	cg3::Dcel m = _mesh;
 	std::vector<cg3::Dcel> dec;
-	for (const HFBox& b : boxes){
+	for (const HFBox& b : _boxes){
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
 		box.rotate(b.rotationMatrix().transpose());
 		//box.saveOnObj("debug/b" + std::to_string(i++) + ".obj");

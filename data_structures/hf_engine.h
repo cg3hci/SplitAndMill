@@ -20,7 +20,10 @@ public:
 	void setUseSmoothedMesh(bool b);
 	void pushBox(const HFBox& box);
 	void popBox();
+	const std::vector<HFBox>& boxes() const;
+	std::vector<cg3::Vec3d> restoreHighFrequenciesDirs() const;
 	void restoreHighFrequencies(uint nIterations, double flipAngle);
+	double hausdorffDistance() const;
 	std::vector<cg3::Dcel> decomposition() const;
 	cg3::Dcel mesh() const;
 	cg3::Dcel originalMesh() const;
@@ -29,7 +32,7 @@ private:
 	cg3::Dcel _mesh;
 	cg3::Dcel _originalMesh;
 	bool useSmoothedMesh;
-	std::vector<HFBox> boxes;
+	std::vector<HFBox> _boxes;
 };
 
 #endif // HF_ENGINE_H

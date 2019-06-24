@@ -8,6 +8,7 @@
 #define CG3_EXAMPLE_MANAGER_H
 
 #include <QFrame>
+#include <QThread>
 #include <cg3/viewer/mainwindow.h>
 
 #include <cg3/viewer/drawable_objects/drawable_dcel.h>
@@ -37,12 +38,21 @@ public:
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
 	void changeTab(uint tab);
+	void startWork();
+	void endWork();
 	int selectedTestdirection() const;
 	void colorTestMesh();
 
 public slots:
 	void undo();
 	void redo();
+	void setProgressBarValue(uint value);
+
+signals:
+	void taubinSmoothing(cg3::Dcel, uint, double, double);
+	void optimalOrientation(cg3::Dcel, uint);
+	void restoreHighFrequencies(HFEngine*, uint, double);
+	void computeDecomposition(HFEngine*);
 
 private slots:
 
@@ -55,6 +65,7 @@ private slots:
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
+	void taubinSmoothingCompleted(cg3::Dcel m);
 
 	void on_smoothingNextPushButton_clicked();
 
@@ -64,12 +75,14 @@ private slots:
 	void on_manualOrientationRadioButton_toggled(bool checked);
 
 	void on_optimalOrientationPushButton_clicked();
+	void optimalOrientationCompleted(Eigen::Matrix3d rot);
 
 	void on_resetRotationPushButton_clicked();
 
 	void on_manualOrientationDonePushButton_clicked();
 
 	void on_orientationNextPushButton_clicked();
+	void finishRotation();
 
 	//box
 	void on_pxRadioButton_toggled(bool checked);
@@ -91,14 +104,15 @@ private slots:
 	void on_cutPushButton_clicked();
 
 	void on_decompositionNextPushButton_clicked();
-
 	void finishDecomposition();
 
 	//post processing
 
 	void on_restoreHighFrequenciesPushButton_clicked();
+	void restoreHighFrequenciesCompleted();
 
 	void on_computeDecompositionPushButton_clicked();
+	void computeDecompositionCompleted(std::vector<cg3::Dcel> dec);
 
 	//test frame
 	void on_testOrTrianglesCheckBox_stateChanged(int arg1);
@@ -117,6 +131,7 @@ private slots:
 
 private:
 	Ui::HFGui *ui;
+	QThread workerThread;
 
     //reference to the MainWindow
     cg3::viewer::MainWindow& mw;
@@ -139,7 +154,5 @@ private:
 	std::vector<UserAction> actions;
 	uint actualAction;
 };
-
-#include "hf_gui.cpp"
 
 #endif // CG3_EXAMPLE_MANAGER_H

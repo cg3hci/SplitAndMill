@@ -9,6 +9,14 @@
 
 #include <cg3/meshes/dcel/dcel.h>
 
+bool validateMove(
+		const cg3::Dcel::Vertex* v,
+		cg3::Vec3d dir,
+		const cg3::Point3d& vid_new_pos,
+		double flipAngle);
+
+std::vector<cg3::Vec3d> differentialCoordinates(const cg3::Dcel& m);
+
 void restoreHighHrequenciesGaussSeidel(
 		cg3::Dcel& smoothMesh,
 		const cg3::Dcel& detailMesh,

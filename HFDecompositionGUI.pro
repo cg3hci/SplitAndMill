@@ -55,7 +55,8 @@ HEADERS += \
     gui/hf_gui.h \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
-    gui/rotatable_mesh.h
+    gui/rotatable_mesh.h \
+    gui/thread_worker.h
 
 
 SOURCES += \
@@ -63,12 +64,16 @@ SOURCES += \
     data_structures/hf_engine.cpp \
     data_structures/high_frequencies_restore.cpp \
     data_structures/user_action.cpp \
-#    gui/hf_gui.cpp \
+    gui/hf_gui.cpp \
     gui/manipulable_boundingbox.cpp \
     gui/manipulable_sphere.cpp \
     gui/rotatable_mesh.cpp \
+    gui/thread_worker.cpp \
     main.cpp
 
 FORMS += \
     gui/hf_gui.ui
+
+RESOURCES += \
+    res/res.qrc
 
