@@ -62,7 +62,10 @@ private slots:
 
 	void on_clearPushButton_clicked();
 
-	void on_exportDecompositionPushButton_clicked();
+	void on_loadHFDPushButton_clicked();
+	void afterLoadHFD();
+
+	void on_saveHFDPushButton_clicked();
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
@@ -103,6 +106,7 @@ private slots:
 	void on_containedTrisPushButton_clicked();
 
 	void on_cutPushButton_clicked();
+	void startCut();
 	void cutCompleted(cg3::Dcel res);
 
 	void on_decompositionNextPushButton_clicked();
@@ -115,6 +119,8 @@ private slots:
 
 	void on_computeDecompositionPushButton_clicked();
 	void computeDecompositionCompleted(std::vector<cg3::Dcel> dec);
+
+	void on_exportDecompositionPushButton_clicked();
 
 	void on_nextPostProcessingPushButton_clicked();
 
@@ -144,6 +150,7 @@ private:
     //reference to the MainWindow
     cg3::viewer::MainWindow& mw;
 	cg3::viewer::LoaderSaver lsmesh;
+	cg3::viewer::LoaderSaver lshfd;
 
 	cg3::DrawableDcel mesh;
 	cg3::DrawableDcel originalMesh;
@@ -161,6 +168,9 @@ private:
 
 	std::vector<UserAction> actions;
 	uint actualAction;
+
+	const uint version = 1;
+
 };
 
 #endif // CG3_EXAMPLE_MANAGER_H

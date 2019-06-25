@@ -43,3 +43,15 @@ Eigen::Matrix3d HFBox::rotationMatrix() const
 {
 	return rot;
 }
+
+void HFBox::serialize(std::ofstream &binaryFile) const
+{
+	BoundingBox3::serialize(binaryFile);
+	cg3::serializeObjectAttributes("HFBox", binaryFile, dir, rot);
+}
+
+void HFBox::deserialize(std::ifstream &binaryFile)
+{
+	BoundingBox3::deserialize(binaryFile);
+	cg3::deserializeObjectAttributes("HFBox", binaryFile, dir, rot);
+}

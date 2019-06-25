@@ -22,10 +22,14 @@ public:
 	MillingDir millingDirection() const;
 	Eigen::Matrix3d rotationMatrix() const;
 
+	// SerializableObject interface
+	void serialize(std::ofstream &binaryFile) const;
+	void deserialize(std::ifstream &binaryFile);
+
 private:
 	MillingDir dir;
 	Eigen::Matrix3d rot; //this is the matrix used to rotate the mesh!
-						 //to rotate the box, use rot.transpose()
+	//to rotate the box, use rot.transpose()
 };
 
 #endif // HF_BOX_H

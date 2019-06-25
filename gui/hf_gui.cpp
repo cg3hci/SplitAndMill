@@ -37,6 +37,7 @@ HFGui::HFGui(QWidget *parent) :
 	lsmesh.addSupportedExtension("obj");
 	lsmesh.addSupportedExtension("ply");
 	lsmesh.addSupportedExtension("dcel");
+	lshfd.addSupportedExtension("hfd");
 	mw.canvas.toggleCameraType();
 
 	connect(&mw, SIGNAL(undoEvent()),
@@ -101,6 +102,7 @@ HFGui::~HFGui()
 void HFGui::clear()
 {
 	mw.deleteDrawableObject(&mesh);
+	mw.deleteDrawableObject(&originalMesh);
 	mw.deleteDrawableObject(&box);
 	mw.deleteDrawableObject(&hfDecomposition);
 	mw.deleteDrawableObject(&rotatableMesh);
@@ -113,6 +115,7 @@ void HFGui::clear()
 	ui->tabWidget->setCurrentIndex(0);
 	ui->tabWidget->setEnabled(false);
 	ui->testFrame->setEnabled(false);
+	ui->saveHFDPushButton->setEnabled(false);
 }
 
 void HFGui::addAction(const UserAction &action)
@@ -171,7 +174,8 @@ void HFGui::endWork()
 {
 	ui->mainFrame->setEnabled(true);
 	ui->tabWidget->setEnabled(true);
-	ui->testFrame->setEnabled(true);
+	if (actualTab > 2)
+		ui->testFrame->setEnabled(true);
 	ui->progressBar->setValue(100);
 	ui->circLabel->setMovie(nullptr);
 	QPixmap pixmap(":/green.ico");
@@ -352,6 +356,7 @@ void HFGui::on_loadMeshPushButton_clicked()
 			ui->tabWidget->setTabEnabled(4, false);
 			ui->testFrame->setEnabled(true);
 			actualTab = 0;
+			ui->saveHFDPushButton->setEnabled(true);
 		}
 	}
 }
@@ -361,13 +366,87 @@ void HFGui::on_clearPushButton_clicked()
 	clear();
 }
 
-void HFGui::on_exportDecompositionPushButton_clicked()
+void HFGui::on_loadHFDPushButton_clicked()
 {
-	std::string dir = lsmesh.directoryDialog();
-	if (dir != "") {
+	std::string filename = lshfd.loadDialog("Load HFD");
+	if (filename != "") {
+		std::ifstream myfile;
+		myfile.open (filename, std::ios::in | std::ios::binary);
+		if (myfile.is_open()){
+			startWork();
+			clear();
+			uint v;
+			cg3::deserialize(v, myfile);
+			cg3::deserializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
+										   totalSurface, totalVolume, remainingSurface, remainingVolume);
+			myfile.close();
+			afterLoadHFD();
+		}
+	}
+}
+
+void HFGui::afterLoadHFD()
+{
+	ui->saveHFDPushButton->setEnabled(true);
+	ui->tabWidget->setEnabled(true);
+	ui->tabWidget->setTabEnabled(0, false);
+	ui->tabWidget->setTabEnabled(1, false);
+	ui->tabWidget->setTabEnabled(2, false);
+	ui->tabWidget->setTabEnabled(3, false);
+	ui->tabWidget->setTabEnabled(4, false);
+	colorTestMesh();
+	changeTab(actualTab);
+	mw.pushDrawableObject(&mesh, "Loaded Mesh");
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mesh.update();
+	if (hfEngine.usesSmoothedMesh()){
+		originalMesh = hfEngine.originalMesh();
+		originalMesh.update();
+		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
+		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
+	}
+	updateSurfaceAndvolume();
+	if (actualTab == 1 || actualTab == 2){
+		box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
+		mw.pushDrawableObject(&box, "box");
+		if (actualTab == 2){
+			box.setDrawArrow(true);
+		}
+	}
+	if (actualTab == 3 && hfEngine.usesSmoothedMesh()){
+		ui->restoreHighFrequenciesPushButton->setEnabled(true);
+		ui->nRestoreIterationsSpinBox->setEnabled(true);
+		ui->nRestoreIterationsLabel->setEnabled(true);
+		ui->hausDescrLabel->setEnabled(true);
+		ui->hausdorffDistanceLabel->setEnabled(true);
+	}
+	if (hfEngine.decomposition().size() > 0){
+		hfDecomposition.clear();
 		uint i = 0;
-		for (const cg3::DrawableDcel& b : hfDecomposition){
-			b.saveOnObj(dir + "/b" + std::to_string(i++) + ".obj", false);
+		for (const cg3::Dcel& d : hfEngine.decomposition())
+			hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
+		mw.setDrawableObjectVisibility(&mesh, false);
+		mw.setDrawableObjectVisibility(&originalMesh, false);
+		mw.pushDrawableObject(&hfDecomposition, "Decomposition");
+		ui->exportDecompositionPushButton->setEnabled(true);
+		ui->nextPostProcessingPushButton->setEnabled(true);
+	}
+	mw.canvas.fitScene();
+	mw.canvas.update();
+	endWork();
+}
+
+void HFGui::on_saveHFDPushButton_clicked()
+{
+	std::string filename = lshfd.saveDialog("Save HFD");
+	if (filename != "") {
+		std::ofstream myfile;
+		myfile.open (filename, std::ios::out | std::ios::binary);
+		if (myfile.is_open()){
+			cg3::serialize(version, myfile);
+			cg3::serializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
+										   totalSurface, totalVolume, remainingSurface, remainingVolume);
+			myfile.close();
 		}
 	}
 }
@@ -606,6 +685,40 @@ void HFGui::on_containedTrisPushButton_clicked()
 
 void HFGui::on_cutPushButton_clicked()
 {
+	bool isHF = true;
+	double nonhfSurf = 0;
+	cg3::Vec3d dir = cg3::AXIS[box.millingDirection()];
+	std::list<const cg3::Dcel::Face*> lf = treeMesh.containedDcelFaces(cg3::BoundingBox3(box.min(), box.max()));
+	for(const cg3::Dcel::Face* f : lf){
+		if (f->normal().dot(dir) < std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180))){
+			isHF = false;
+			nonhfSurf += f->area();
+		}
+	}
+	bool continueCut = true;
+	if (!isHF){
+		nonhfSurf = (nonhfSurf / totalSurface) * 200;
+		QMessageBox* box = new QMessageBox(&mw);
+		box->setWindowTitle("Non HF Block");
+		box->setText("You are trying to cut a block that is not an height-field w.r.t. the selected "
+					 "milling direction.\n"
+					 "There amount of losed surface is the " + QString::number(nonhfSurf) + "% of the total.\n"
+					 "Are you sure to cut this block?");
+		box->addButton(QMessageBox::Ok);
+		box->button(QMessageBox::Ok)->setText("Cut");
+		box->addButton(QMessageBox::Cancel);
+		box->button(QMessageBox::Cancel)->setText("Cancel");
+		box->setEscapeButton(QMessageBox::Cancel);
+		box->setDefaultButton(QMessageBox::Cancel);
+		int ret = box->exec();
+		continueCut = ret == QMessageBox::Ok;
+	}
+	if (continueCut)
+		startCut();
+}
+
+void HFGui::startCut()
+{
 	startWork();
 	ui->flipAngleSpinBox->setEnabled(false);
 	ui->lightToleranceSpinBox->setEnabled(false);
@@ -708,6 +821,17 @@ void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)
 	ui->exportDecompositionPushButton->setEnabled(true);
 	ui->nextPostProcessingPushButton->setEnabled(true);
 	endWork();
+}
+
+void HFGui::on_exportDecompositionPushButton_clicked()
+{
+	std::string dir = lsmesh.directoryDialog();
+	if (dir != "") {
+		uint i = 0;
+		for (const cg3::DrawableDcel& b : hfDecomposition){
+			b.saveOnObj(dir + "/b" + std::to_string(i++) + ".obj", false);
+		}
+	}
 }
 
 void HFGui::on_nextPostProcessingPushButton_clicked()

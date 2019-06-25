@@ -40,6 +40,11 @@ void HFEngine::setUseSmoothedMesh(bool b)
 	useSmoothedMesh = b;
 }
 
+bool HFEngine::usesSmoothedMesh() const
+{
+	return useSmoothedMesh;
+}
+
 void HFEngine::pushBox(const HFBox &box)
 {
 	_boxes.push_back(box);
@@ -142,6 +147,7 @@ void HFEngine::rotateAllBlocks()
 		}
 		_decomposition[i].rotate(r);
 		_decomposition[i].updateBoundingBox();
+
 		_decomposition[i].translate(cg3::Point3d(0,0,-_decomposition[i].boundingBox().min().z()));
 		_decomposition[i].updateBoundingBox();
 	}
@@ -155,4 +161,14 @@ cg3::Dcel HFEngine::mesh() const
 cg3::Dcel HFEngine::originalMesh() const
 {
 	return _originalMesh;
+}
+
+void HFEngine::serialize(std::ofstream &binaryFile) const
+{
+	cg3::serializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition);
+}
+
+void HFEngine::deserialize(std::ifstream &binaryFile)
+{
+	cg3::deserializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition);
 }

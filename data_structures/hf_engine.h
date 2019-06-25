@@ -10,7 +10,7 @@
 #include <cg3/meshes/dcel/dcel.h>
 #include "hf_box.h"
 
-class HFEngine
+class HFEngine : public cg3::SerializableObject
 {
 public:
 	HFEngine();
@@ -18,6 +18,7 @@ public:
 	void setMesh(const cg3::Dcel& _mesh);
 	void setOriginalMesh(const cg3::Dcel& _mesh);
 	void setUseSmoothedMesh(bool b);
+	bool usesSmoothedMesh() const;
 	void pushBox(const HFBox& box);
 	void popBox();
 	const std::vector<HFBox>& boxes() const;
@@ -31,6 +32,10 @@ public:
 
 	cg3::Dcel mesh() const;
 	cg3::Dcel originalMesh() const;
+
+	// SerializableObject interface
+	void serialize(std::ofstream &binaryFile) const;
+	void deserialize(std::ifstream &binaryFile);
 
 private:
 	cg3::Dcel _mesh;
