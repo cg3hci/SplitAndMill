@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of cg3lib: https://github.com/cg3hci/cg3lib
  * This Source Code Form is subject to the terms of the GNU GPL 3.0
  *
@@ -51,6 +51,7 @@ HFGui::HFGui(QWidget *parent) :
 
 	qRegisterMetaType<cg3::Dcel>("cg3::Dcel");
 	qRegisterMetaType<Eigen::Matrix3d>("Eigen::Matrix3d");
+	qRegisterMetaType<HFBox>("HFBox");
 	qRegisterMetaType<HFEngine*>("HFEngine*");
 	qRegisterMetaType<std::vector<cg3::Dcel>>("std::vector<cg3::Dcel>");
 
@@ -68,6 +69,12 @@ HFGui::HFGui(QWidget *parent) :
 
 	connect(tw, SIGNAL(optimalOrientationCompleted(Eigen::Matrix3d)),
 			this, SLOT(optimalOrientationCompleted(Eigen::Matrix3d)));
+
+	connect(this, SIGNAL(cut(cg3::Dcel, HFBox)),
+			tw, SLOT(cut(cg3::Dcel, HFBox)));
+
+	connect(tw, SIGNAL(cutCompleted(cg3::Dcel)),
+			this, SLOT(cutCompleted(cg3::Dcel)));
 
 	connect(this, SIGNAL(restoreHighFrequencies(HFEngine*, uint, double)),
 			tw, SLOT(restoreHighFrequencies(HFEngine*, uint, double)));
@@ -360,7 +367,7 @@ void HFGui::on_exportDecompositionPushButton_clicked()
 	if (dir != "") {
 		uint i = 0;
 		for (const cg3::DrawableDcel& b : hfDecomposition){
-			b.saveOnObj(dir + "b" + std::to_string(i) + ".obj", false);
+			b.saveOnObj(dir + "/b" + std::to_string(i++) + ".obj", false);
 		}
 	}
 }
@@ -599,28 +606,19 @@ void HFGui::on_containedTrisPushButton_clicked()
 
 void HFGui::on_cutPushButton_clicked()
 {
+	startWork();
 	ui->flipAngleSpinBox->setEnabled(false);
 	ui->lightToleranceSpinBox->setEnabled(false);
 
-	cg3::BoundingBox3 bb(box.min(), box.max());
-	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(bb);
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
 	hfEngine.pushBox(hfbox);
 	addAction(UserAction(mesh, hfbox, actualTab));
 
-	std::vector<uint> birthFaces;
-	uint nFaces = mesh.numberFaces();
+	emit cut(mesh, hfbox);
+}
 
-	cg3::Dcel res = cg3::DrawableDcel(cg3::libigl::difference(mesh, b, birthFaces));
-	for (cg3::Dcel::Face* f : res.faceIterator()){
-		if (birthFaces[f->id()] < nFaces){
-			f->setFlag(mesh.face(birthFaces[f->id()])->flag());
-		}
-		else{
-			f->setFlag(1);
-		}
-	}
-
+void HFGui::cutCompleted(cg3::Dcel res)
+{
 	mesh = res;
 	mesh.update();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
@@ -628,6 +626,7 @@ void HFGui::on_cutPushButton_clicked()
 	updateSurfaceAndvolume();
 
 	mw.canvas.update();
+	endWork();
 }
 
 void HFGui::on_decompositionNextPushButton_clicked()
@@ -697,8 +696,10 @@ void HFGui::on_computeDecompositionPushButton_clicked()
 void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)
 {
 	uint i = 0;
+	hfDecomposition.clear();
+	hfEngine.decomposition() = dec;
 	for (const cg3::Dcel& d : dec)
-		hfDecomposition.pushBack(d, "Block " + std::to_string(i));
+		hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
 
 	mw.setDrawableObjectVisibility(&mesh, false);
 	mw.setDrawableObjectVisibility(&originalMesh, false);
@@ -707,6 +708,21 @@ void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)
 	ui->exportDecompositionPushButton->setEnabled(true);
 	ui->nextPostProcessingPushButton->setEnabled(true);
 	endWork();
+}
+
+void HFGui::on_nextPostProcessingPushButton_clicked()
+{
+	changeTab(4);
+}
+
+void HFGui::on_smartPackingPushButton_clicked()
+{
+	hfEngine.rotateAllBlocks();
+	hfDecomposition.clear();
+	uint i = 0;
+	for (const cg3::Dcel& d : hfEngine.decomposition())
+		hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
+	mw.canvas.update();
 }
 
 void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)

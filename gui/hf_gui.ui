@@ -20,7 +20,7 @@
       <bool>false</bool>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="usesScrollButtons">
       <bool>false</bool>
@@ -469,13 +469,6 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="computeDecompositionPushButton">
-         <property name="text">
-          <string>Compute Decomposition</string>
-         </property>
-        </widget>
-       </item>
        <item row="5" column="0" colspan="2">
         <widget class="Line" name="line_7">
          <property name="orientation">
@@ -553,6 +546,23 @@
          </property>
         </widget>
        </item>
+       <item row="4" column="0">
+        <widget class="QPushButton" name="computeDecompositionPushButton">
+         <property name="text">
+          <string>Compute Decomposition</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QPushButton" name="exportDecompositionPushButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Export Decomposition</string>
+         </property>
+        </widget>
+       </item>
       </layout>
       <zorder>computeDecompositionPushButton</zorder>
       <zorder>nRestoreIterationsSpinBox</zorder>
@@ -563,6 +573,7 @@
       <zorder>nextPostProcessingPushButton</zorder>
       <zorder>hausDescrLabel</zorder>
       <zorder>hausdorffDistanceLabel</zorder>
+      <zorder>exportDecompositionPushButton</zorder>
      </widget>
      <widget class="QWidget" name="packingTab">
       <property name="enabled">
@@ -572,7 +583,7 @@
        <string>Packing</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="0" column="0">
+       <item row="1" column="0">
         <spacer name="verticalSpacer_6">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -584,6 +595,13 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="smartPackingPushButton">
+         <property name="text">
+          <string>Smart Packing</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -773,16 +791,6 @@
         </property>
         <property name="text">
          <string>Save HFD Project</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QPushButton" name="exportDecompositionPushButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Export Decomposition</string>
         </property>
        </widget>
       </item>

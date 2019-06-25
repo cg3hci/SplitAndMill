@@ -53,6 +53,7 @@ signals:
 	void optimalOrientation(cg3::Dcel, uint);
 	void restoreHighFrequencies(HFEngine*, uint, double);
 	void computeDecomposition(HFEngine*);
+	void cut(cg3::Dcel, HFBox);
 
 private slots:
 
@@ -102,6 +103,7 @@ private slots:
 	void on_containedTrisPushButton_clicked();
 
 	void on_cutPushButton_clicked();
+	void cutCompleted(cg3::Dcel res);
 
 	void on_decompositionNextPushButton_clicked();
 	void finishDecomposition();
@@ -113,6 +115,12 @@ private slots:
 
 	void on_computeDecompositionPushButton_clicked();
 	void computeDecompositionCompleted(std::vector<cg3::Dcel> dec);
+
+	void on_nextPostProcessingPushButton_clicked();
+
+	//packing
+
+	void on_smartPackingPushButton_clicked();
 
 	//test frame
 	void on_testOrTrianglesCheckBox_stateChanged(int arg1);

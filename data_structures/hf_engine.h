@@ -24,7 +24,11 @@ public:
 	std::vector<cg3::Vec3d> restoreHighFrequenciesDirs() const;
 	void restoreHighFrequencies(uint nIterations, double flipAngle);
 	double hausdorffDistance() const;
+	void computeDecomposition();
 	std::vector<cg3::Dcel> decomposition() const;
+	std::vector<cg3::Dcel>& decomposition();
+	void rotateAllBlocks();
+
 	cg3::Dcel mesh() const;
 	cg3::Dcel originalMesh() const;
 
@@ -33,6 +37,7 @@ private:
 	cg3::Dcel _originalMesh;
 	bool useSmoothedMesh;
 	std::vector<HFBox> _boxes;
+	std::vector<cg3::Dcel> _decomposition;
 };
 
 #endif // HF_ENGINE_H

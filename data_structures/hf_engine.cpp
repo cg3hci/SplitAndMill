@@ -100,20 +100,51 @@ double HFEngine::hausdorffDistance() const
 	return cg3::libigl::hausdorffDistance(_mesh, _originalMesh);
 }
 
-std::vector<cg3::Dcel> HFEngine::decomposition() const
+void HFEngine::computeDecomposition()
 {
-	//mesh.saveOnObj("debug/mesh.obj", false);
-	//uint i = 0;
+	_decomposition.clear();
 	cg3::Dcel m = _mesh;
-	std::vector<cg3::Dcel> dec;
 	for (const HFBox& b : _boxes){
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
 		box.rotate(b.rotationMatrix().transpose());
 		//box.saveOnObj("debug/b" + std::to_string(i++) + ".obj");
-		dec.push_back(cg3::libigl::intersection(m, box));
+		_decomposition.push_back(cg3::libigl::intersection(m, box));
 		m = (cg3::Dcel)cg3::libigl::difference(m, box);
 	}
-	return dec;
+}
+
+std::vector<cg3::Dcel> HFEngine::decomposition() const
+{
+	return _decomposition;
+}
+
+std::vector<cg3::Dcel> &HFEngine::decomposition()
+{
+	return _decomposition;
+}
+
+void HFEngine::rotateAllBlocks()
+{
+	for (unsigned int i = 0; i < _boxes.size(); i++){
+		cg3::Vec3d normal = cg3::AXIS[_boxes[i].millingDirection()];
+		normal.rotate(_boxes[i].rotationMatrix().transpose());
+		cg3::Vec3d axis = normal.cross(cg3::Z_AXIS);
+		axis.normalize();
+		double dot = normal.dot(cg3::Z_AXIS);
+		double angle = acos(dot);
+
+		Eigen::Matrix3d r = Eigen::Matrix3d::Identity();
+		if (normal != cg3::Z_AXIS){
+			if (normal == -cg3::Z_AXIS){
+				axis = cg3::Vec3d(1,0,0);
+			}
+			cg3::rotationMatrix(axis, angle, r);
+		}
+		_decomposition[i].rotate(r);
+		_decomposition[i].updateBoundingBox();
+		_decomposition[i].translate(cg3::Point3d(0,0,-_decomposition[i].boundingBox().min().z()));
+		_decomposition[i].updateBoundingBox();
+	}
 }
 
 cg3::Dcel HFEngine::mesh() const

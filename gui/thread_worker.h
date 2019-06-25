@@ -26,6 +26,8 @@ public slots:
 
 	void optimalOrientation(cg3::Dcel mesh, uint nDirs);
 
+	void cut(cg3::Dcel mesh, HFBox hfbox);
+
 	void restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double flipAngle);
 
 	void computeDecomposition(HFEngine* hfEngine);
@@ -34,6 +36,7 @@ signals:
 	void setProgressBarValue(uint);
 	void taubinSmoothingCompleted(cg3::Dcel);
 	void optimalOrientationCompleted(Eigen::Matrix3d);
+	void cutCompleted(cg3::Dcel);
 	void restoreHighFrequenciesCompleted();
 	void computeDecompositionCompleted(std::vector<cg3::Dcel>);
 

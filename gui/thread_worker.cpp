@@ -9,6 +9,7 @@
 #include <cg3/utilities/timer.h>
 #include <cg3/vcglib/smoothing.h>
 #include <cg3/algorithms/global_optimal_rotation_matrix.h>
+#include <cg3/algorithms/sphere_coverage.h>
 #include "data_structures/high_frequencies_restore.h"
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 #include <cg3/libigl/booleans.h>
@@ -30,6 +31,25 @@ void ThreadWorker::optimalOrientation(cg3::Dcel mesh, uint nDirs)
 	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
 	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(mesh, dirs);
 	emit optimalOrientationCompleted(rot);
+}
+
+void ThreadWorker::cut(cg3::Dcel mesh, HFBox hfbox)
+{
+	std::vector<uint> birthFaces;
+	uint nFaces = mesh.numberFaces();
+
+	cg3::BoundingBox3 bb(hfbox.min(), hfbox.max());
+	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(bb);
+	cg3::Dcel res =cg3::libigl::difference(mesh, b, birthFaces);
+	for (cg3::Dcel::Face* f : res.faceIterator()){
+		if (birthFaces[f->id()] < nFaces){
+			f->setFlag(mesh.face(birthFaces[f->id()])->flag());
+		}
+		else{
+			f->setFlag(1);
+		}
+	}
+	emit cutCompleted(res);
 }
 
 void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double flipAngle)
