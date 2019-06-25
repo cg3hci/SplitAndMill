@@ -48,6 +48,17 @@ void ManipulableBoundingBox::drawHighlighted() const
 	drawArrow();
 }
 
+void ManipulableBoundingBox::setMin(const cg3::Point3d &min)
+{
+	_min.setPosition(min);
+}
+
+void ManipulableBoundingBox::setMax(const cg3::Point3d &max)
+{
+	_max.setPosition(max);
+}
+
+
 void ManipulableBoundingBox::set(const cg3::Point3d &min, const cg3::Point3d &max)
 {
 	cg3::Point3d center = (min + max)*0.5;

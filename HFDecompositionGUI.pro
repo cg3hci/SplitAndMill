@@ -52,6 +52,7 @@ HEADERS += \
     data_structures/high_frequencies_restore.h \
     data_structures/user_action.h \
     gui/arrow.h \
+    gui/guides.h \
     gui/hf_gui.h \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
@@ -64,6 +65,7 @@ SOURCES += \
     data_structures/hf_engine.cpp \
     data_structures/high_frequencies_restore.cpp \
     data_structures/user_action.cpp \
+    gui/guides.cpp \
     gui/hf_gui.cpp \
     gui/manipulable_boundingbox.cpp \
     gui/manipulable_sphere.cpp \

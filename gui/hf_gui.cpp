@@ -39,6 +39,7 @@ HFGui::HFGui(QWidget *parent) :
 	lsmesh.addSupportedExtension("dcel");
 	lshfd.addSupportedExtension("hfd");
 	mw.canvas.toggleCameraType();
+	mw.canvas.pushDrawableObject(&guides);
 
 	connect(&mw, SIGNAL(undoEvent()),
 			this, SLOT(undo()));
@@ -357,6 +358,7 @@ void HFGui::on_loadMeshPushButton_clicked()
 			ui->testFrame->setEnabled(true);
 			actualTab = 0;
 			ui->saveHFDPushButton->setEnabled(true);
+			guides.setBoundingBox(mesh.boundingBox());
 		}
 	}
 }
@@ -433,6 +435,7 @@ void HFGui::afterLoadHFD()
 	}
 	mw.canvas.fitScene();
 	mw.canvas.update();
+	guides.setBoundingBox(mesh.boundingBox());
 	endWork();
 }
 
@@ -541,6 +544,7 @@ void HFGui::optimalOrientationCompleted(Eigen::Matrix3d rot)
 	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mw.canvas.update();
+	guides.setBoundingBox(mesh.boundingBox());
 	endWork();
 }
 
@@ -594,7 +598,7 @@ void HFGui::finishRotation()
 	mw.deleteDrawableObject(&rotatableMesh);
 	changeTab(2);
 	colorTestMesh();
-
+	guides.setBoundingBox(mesh.boundingBox());
 	box.setDrawArrow(true);
 	mw.canvas.update();
 }
@@ -722,6 +726,8 @@ void HFGui::startCut()
 	startWork();
 	ui->flipAngleSpinBox->setEnabled(false);
 	ui->lightToleranceSpinBox->setEnabled(false);
+	guides.pushGuide(box.min());
+	guides.pushGuide(box.max());
 
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
 	hfEngine.pushBox(hfbox);
@@ -740,6 +746,66 @@ void HFGui::cutCompleted(cg3::Dcel res)
 
 	mw.canvas.update();
 	endWork();
+}
+
+void HFGui::on_xGuideCheckBox_stateChanged(int arg1)
+{
+	guides.setDrawX(arg1 == Qt::Checked);
+	mw.canvas.update();
+}
+
+void HFGui::on_yGuidesCheckBox_stateChanged(int arg1)
+{
+	guides.setDrawY(arg1 == Qt::Checked);
+	mw.canvas.update();
+}
+
+void HFGui::on_zGiudesCheckBox_stateChanged(int arg1)
+{
+	guides.setDrawZ(arg1 == Qt::Checked);
+	mw.canvas.update();
+}
+
+void HFGui::on_snapMinXPushButton_clicked()
+{
+	cg3::Point3d p = guides.nearest(box.min(), 0);
+	box.setMin(cg3::Point3d(p.x(), box.min().y(), box.min().z()));
+	mw.canvas.update();
+}
+
+void HFGui::on_snapMaxXPushButton_clicked()
+{
+	cg3::Point3d p = guides.nearest(box.max(), 0);
+	box.setMax(cg3::Point3d(p.x(), box.max().y(), box.max().z()));
+	mw.canvas.update();
+}
+
+void HFGui::on_snapMinYPushButton_clicked()
+{
+	cg3::Point3d p = guides.nearest(box.min(), 1);
+	box.setMin(cg3::Point3d(box.min().x(), p.y(), box.min().z()));
+	mw.canvas.update();
+}
+
+void HFGui::on_snapMaxYPushButton_clicked()
+{
+	cg3::Point3d p = guides.nearest(box.max(), 1);
+	box.setMax(cg3::Point3d(box.max().x(), p.y(), box.max().z()));
+	mw.canvas.update();
+}
+
+void HFGui::on_snapMinZPushButton_clicked()
+{
+	cg3::Point3d p = guides.nearest(box.min(), 2);
+	box.setMin(cg3::Point3d(box.min().x(), box.min().y(), p.z()));
+	mw.canvas.update();
+}
+
+void HFGui::on_snapMaxZPushButton_clicked()
+{
+	cg3::Point3d p = guides.nearest(box.max(), 2);
+	box.setMax(cg3::Point3d(box.max().x(), box.max().y(), p.z()));
+	mw.canvas.update();
 }
 
 void HFGui::on_decompositionNextPushButton_clicked()

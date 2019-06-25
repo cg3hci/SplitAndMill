@@ -18,6 +18,7 @@
 
 #include "manipulable_boundingbox.h"
 #include "rotatable_mesh.h"
+#include "guides.h"
 #include "data_structures/user_action.h"
 #include "data_structures/hf_box.h"
 #include "data_structures/hf_engine.h"
@@ -109,6 +110,24 @@ private slots:
 	void startCut();
 	void cutCompleted(cg3::Dcel res);
 
+	void on_xGuideCheckBox_stateChanged(int arg1);
+
+	void on_yGuidesCheckBox_stateChanged(int arg1);
+
+	void on_zGiudesCheckBox_stateChanged(int arg1);
+
+	void on_snapMinXPushButton_clicked();
+
+	void on_snapMaxXPushButton_clicked();
+
+	void on_snapMinYPushButton_clicked();
+
+	void on_snapMaxYPushButton_clicked();
+
+	void on_snapMinZPushButton_clicked();
+
+	void on_snapMaxZPushButton_clicked();
+
 	void on_decompositionNextPushButton_clicked();
 	void finishDecomposition();
 
@@ -165,6 +184,7 @@ private:
 
 	RotatableMesh rotatableMesh;
 	ManipulableBoundingBox box;
+	Guides guides;
 
 	std::vector<UserAction> actions;
 	uint actualAction;

@@ -31,6 +31,8 @@ public:
 
 	void setDrawArrow(bool b);
 
+	void setMin(const cg3::Point3d& min);
+	void setMax(const cg3::Point3d& max);
 	void set(const cg3::Point3d &min, const cg3::Point3d &max);
 	void setMillingDirection(HFBox::MillingDir dir);
 	HFBox::MillingDir millingDirection() const {return millingDir;};

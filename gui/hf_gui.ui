@@ -20,7 +20,7 @@
       <bool>false</bool>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <property name="usesScrollButtons">
       <bool>false</bool>
@@ -256,40 +256,6 @@
        <string>Decomposition</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_10">
-       <item row="5" column="1">
-        <widget class="QPushButton" name="containedTrisPushButton">
-         <property name="text">
-          <string>Contained Tris</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QPushButton" name="cutPushButton">
-         <property name="text">
-          <string>Cut</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="0">
-        <widget class="QRadioButton" name="pxRadioButton">
-         <property name="text">
-          <string>+X</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0" colspan="3">
         <widget class="Line" name="line_2">
          <property name="orientation">
@@ -297,17 +263,24 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0" colspan="3">
-        <widget class="Line" name="line_9">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+       <item row="4" column="2">
+        <widget class="QRadioButton" name="mzRadioButton">
+         <property name="text">
+          <string>-Z</string>
          </property>
         </widget>
        </item>
-       <item row="10" column="0" colspan="3">
-        <widget class="QPushButton" name="decompositionNextPushButton">
+       <item row="3" column="1">
+        <widget class="QRadioButton" name="pyRadioButton">
          <property name="text">
-          <string>Next &gt;&gt;</string>
+          <string>+Y</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QCheckBox" name="xGuideCheckBox">
+         <property name="text">
+          <string>X Guides</string>
          </property>
         </widget>
        </item>
@@ -321,24 +294,72 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="2">
-        <widget class="QRadioButton" name="mzRadioButton">
+       <item row="10" column="0">
+        <widget class="QPushButton" name="snapMinXPushButton">
          <property name="text">
-          <string>-Z</string>
+          <string>Snap Min Nearest X</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QRadioButton" name="mxRadioButton">
+       <item row="2" column="0" colspan="2">
+        <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>-X</string>
+          <string>Milling Direction:</string>
          </property>
         </widget>
+       </item>
+       <item row="14" column="0">
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>Box</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="3">
+        <widget class="Line" name="line_9">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="2">
+        <widget class="QCheckBox" name="zGiudesCheckBox">
+         <property name="text">
+          <string>Z Guides</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QRadioButton" name="myRadioButton">
+         <property name="text">
+          <string>-Y</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QRadioButton" name="pxRadioButton">
+         <property name="text">
+          <string>+X</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QPushButton" name="containedTrisPushButton">
+         <property name="text">
+          <string>Contained Tris</string>
          </property>
         </widget>
        </item>
@@ -397,38 +418,10 @@
          </layout>
         </widget>
        </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>Milling Direction:</string>
-         </property>
-        </widget>
-       </item>
        <item row="5" column="0">
         <widget class="QPushButton" name="colorAllTrisPushButton">
          <property name="text">
           <string>Color All Tris</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QRadioButton" name="myRadioButton">
-         <property name="text">
-          <string>-Y</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QRadioButton" name="pyRadioButton">
-         <property name="text">
-          <string>+Y</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QCheckBox" name="xGuideCheckBox">
-         <property name="text">
-          <string>X Guides</string>
          </property>
         </widget>
        </item>
@@ -439,10 +432,59 @@
          </property>
         </widget>
        </item>
-       <item row="9" column="2">
-        <widget class="QCheckBox" name="zGiudesCheckBox">
+       <item row="4" column="0">
+        <widget class="QRadioButton" name="mxRadioButton">
          <property name="text">
-          <string>Z Guides</string>
+          <string>-X</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QPushButton" name="cutPushButton">
+         <property name="text">
+          <string>Cut</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0" colspan="3">
+        <widget class="QPushButton" name="decompositionNextPushButton">
+         <property name="text">
+          <string>Next &gt;&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QPushButton" name="snapMaxXPushButton">
+         <property name="text">
+          <string>Snap Max Nearest X</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <widget class="QPushButton" name="snapMinYPushButton">
+         <property name="text">
+          <string>Snap Min Nearest Y</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QPushButton" name="snapMaxYPushButton">
+         <property name="text">
+          <string>Snap Max Nearest Y</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="2">
+        <widget class="QPushButton" name="snapMinZPushButton">
+         <property name="text">
+          <string>Snap Min Nearest Z</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="2">
+        <widget class="QPushButton" name="snapMaxZPushButton">
+         <property name="text">
+          <string>Snap Max Nearest Z</string>
          </property>
         </widget>
        </item>
