@@ -103,16 +103,59 @@ void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double f
 void ThreadWorker::computeDecomposition(HFEngine *hfEngine)
 {
 	std::vector<cg3::Dcel> dec;
+	Eigen::Matrix3d rot = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
 
 	uint i = 0;
 	uint nBoxes = hfEngine->boxes().size();
 
-	cg3::Dcel m = hfEngine->mesh();
+	cg3::SimpleEigenMesh m = hfEngine->mesh();
 	for (const HFBox& b : hfEngine->boxes()){
+		if (b.rotationMatrix() != rot){
+			rot = b.rotationMatrix();
+			m.rotate(rot);
+		}
+
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
-		box.rotate(b.rotationMatrix().transpose());
-		dec.push_back(cg3::libigl::intersection(m, box));
-		m = (cg3::Dcel)cg3::libigl::difference(m, box);
+		//box.rotate(b.rotationMatrix().transpose());
+		cg3::SimpleEigenMesh res = cg3::libigl::intersection(m, box);
+		res.rotate(rot.transpose());
+		dec.push_back(res);
+		m = cg3::libigl::difference(m, box);
+
+		emit setProgressBarValue(((double)i / nBoxes) * 100);
+		i++;
+	}
+
+	emit computeDecompositionCompleted(dec);
+}
+
+void ThreadWorker::computeDecompositionExact(HFEngine* hfEngine){
+	std::vector<cg3::Dcel> dec;
+	Eigen::Matrix3d rtmp = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
+	cg3::libigl::CSGTree::MatrixX3E rot = Eigen::Matrix<cg3::libigl::CSGTree::ExactScalar,3,3>::Identity();
+
+	uint i = 0;
+	uint nBoxes = hfEngine->boxes().size();
+
+	cg3::libigl::CSGTree tree = cg3::libigl::eigenMeshToCSGTree(hfEngine->mesh());
+	for (const HFBox& b : hfEngine->boxes()){
+		if (b.rotationMatrix() != rtmp){
+			rtmp = b.rotationMatrix();
+			rot = b.rotationMatrix().template cast<cg3::libigl::CSGTree::ExactScalar>();
+			auto V = tree.V();
+			for (unsigned int i = 0; i < V.rows(); i++){
+				V.row(i) =  rot * V.row(i).transpose();
+			}
+			tree = cg3::libigl::CSGTree(V, tree.F());
+		}
+
+		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
+		//box.rotate(b.rotationMatrix().transpose());
+		cg3::libigl::CSGTree treebox = cg3::libigl::eigenMeshToCSGTree(box);
+		cg3::SimpleEigenMesh res = cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(tree, treebox));
+		res.rotate(rtmp.transpose());
+		dec.push_back(res);
+		tree = cg3::libigl::difference(tree, treebox);
 
 		emit setProgressBarValue(((double)i / nBoxes) * 100);
 		i++;

@@ -87,6 +87,9 @@ HFGui::HFGui(QWidget *parent) :
 	connect(this, SIGNAL(computeDecomposition(HFEngine*)),
 			tw, SLOT(computeDecomposition(HFEngine*)));
 
+	connect(this, SIGNAL(computeDecompositionExact(HFEngine*)),
+			tw, SLOT(computeDecompositionExact(HFEngine*)));
+
 	connect(tw, SIGNAL(computeDecompositionCompleted(std::vector<cg3::Dcel>)),
 			this, SLOT(computeDecompositionCompleted(std::vector<cg3::Dcel>)));
 
@@ -266,6 +269,7 @@ void HFGui::undo()
 				ui->flipAngleSpinBox->setEnabled(true);
 				ui->lightToleranceSpinBox->setEnabled(true);
 			}
+			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 			break;
 		}
 		mesh.update();
@@ -316,6 +320,7 @@ void HFGui::redo()
 			changeTab(2);
 			ui->flipAngleSpinBox->setEnabled(false);
 			ui->lightToleranceSpinBox->setEnabled(false);
+			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 			break;
 		}
 		mesh.update();
@@ -396,6 +401,7 @@ void HFGui::afterLoadHFD()
 	ui->tabWidget->setTabEnabled(2, false);
 	ui->tabWidget->setTabEnabled(3, false);
 	ui->tabWidget->setTabEnabled(4, false);
+	ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 	colorTestMesh();
 	changeTab(actualTab);
 	mw.pushDrawableObject(&mesh, "Loaded Mesh");
@@ -724,6 +730,7 @@ void HFGui::on_cutPushButton_clicked()
 void HFGui::startCut()
 {
 	startWork();
+
 	ui->flipAngleSpinBox->setEnabled(false);
 	ui->lightToleranceSpinBox->setEnabled(false);
 	guides.pushGuide(box.min());
@@ -732,6 +739,8 @@ void HFGui::startCut()
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
 	hfEngine.pushBox(hfbox);
 	addAction(UserAction(mesh, hfbox, actualTab));
+
+	ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 
 	emit cut(mesh, hfbox);
 }
@@ -869,7 +878,11 @@ void HFGui::restoreHighFrequenciesCompleted()
 void HFGui::on_computeDecompositionPushButton_clicked()
 {
 	startWork();
-	emit computeDecomposition(&hfEngine);
+	mw.deleteDrawableObject(&hfDecomposition);
+	if (ui->exactPredicatesCheckBox->isChecked())
+		emit computeDecompositionExact(&hfEngine);
+	else
+		emit computeDecomposition(&hfEngine);
 }
 
 void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)

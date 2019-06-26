@@ -54,6 +54,7 @@ signals:
 	void optimalOrientation(cg3::Dcel, uint);
 	void restoreHighFrequencies(HFEngine*, uint, double);
 	void computeDecomposition(HFEngine*);
+	void computeDecompositionExact(HFEngine*);
 	void cut(cg3::Dcel, HFBox);
 
 private slots:

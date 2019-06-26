@@ -32,6 +32,8 @@ public slots:
 
 	void computeDecomposition(HFEngine* hfEngine);
 
+	void computeDecompositionExact(HFEngine* hfEngine);
+
 signals:
 	void setProgressBarValue(uint);
 	void taubinSmoothingCompleted(cg3::Dcel);
