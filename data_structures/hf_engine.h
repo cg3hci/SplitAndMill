@@ -28,7 +28,11 @@ public:
 	void computeDecomposition();
 	std::vector<cg3::Dcel> decomposition() const;
 	std::vector<cg3::Dcel>& decomposition();
+
 	void rotateAllBlocks();
+
+	std::vector<std::vector<cg3::Dcel> > packing() const;
+	std::vector<std::vector<cg3::Dcel> >& packing();
 
 	cg3::Dcel mesh() const;
 	cg3::Dcel originalMesh() const;
@@ -43,6 +47,7 @@ private:
 	bool useSmoothedMesh;
 	std::vector<HFBox> _boxes;
 	std::vector<cg3::Dcel> _decomposition;
+	std::vector<std::vector<cg3::Dcel>> _packing;
 };
 
 #endif // HF_ENGINE_H

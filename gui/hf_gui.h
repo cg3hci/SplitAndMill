@@ -179,6 +179,8 @@ private:
 	double totalSurface, totalVolume;
 	double remainingSurface, remainingVolume;
 	cg3::DrawableObjectsContainer<cg3::DrawableDcel> hfDecomposition;
+	cg3::DrawableObjectsContainer<cg3::DrawableObjectsContainer<cg3::DrawableDcel>> packing;
+	cg3::DrawableBoundingBox3 stock;
 	uint actualTab;
 
 	HFEngine hfEngine;

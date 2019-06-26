@@ -58,7 +58,7 @@ void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double f
 	std::vector<cg3::Vec3d> hfDirections = hfEngine->restoreHighFrequenciesDirs();
 	uint step = nIt / 10;
 
-	std::vector<cg3::Vec3d> diffCoords = differentialCoordinates(hfEngine->originalMesh());
+	std::vector<cg3::Vec3d> diffCoords = restoreHF::differentialCoordinates(hfEngine->originalMesh());
 
 
 	for(uint i=0; i<nIt; ++i) {
@@ -77,7 +77,7 @@ void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double f
 
 				// do binary search until the new pos does not violate the hf condition...
 				int count = 0;
-				while(!validateMove(v, hfDirections.at(vid), newPos, flipAngle) && ++count<5) {
+				while(!restoreHF::validateMove(v, hfDirections.at(vid), newPos, flipAngle) && ++count<5) {
 					newPos = 0.5 * (newPos + v->coordinate());
 				}
 

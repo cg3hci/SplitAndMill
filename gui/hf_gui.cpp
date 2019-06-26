@@ -115,6 +115,7 @@ void HFGui::clear()
 	actions.clear();
 	actualAction = 0;
 	mw.canvas.update();
+	guides.clear();
 
 	ui->tabWidget->setCurrentIndex(0);
 	ui->tabWidget->setEnabled(false);
@@ -263,8 +264,12 @@ void HFGui::undo()
 			box.setMillingDirection(actions[actualAction].box().millingDirection());
 			hfEngine.popBox();
 			mw.setDrawableObjectVisibility(&mesh, b);
+			mw.pushDrawableObject(&box, "Box");
+			mw.deleteDrawableObject(&hfDecomposition);
 			updateSurfaceAndvolume();
 			changeTab(actions[actualAction].tab());
+			guides.popGuide();
+			guides.popGuide();
 			if (remainingVolume == totalVolume){
 				ui->flipAngleSpinBox->setEnabled(true);
 				ui->lightToleranceSpinBox->setEnabled(true);
@@ -318,6 +323,8 @@ void HFGui::redo()
 			mw.setDrawableObjectVisibility(&mesh, v);
 			updateSurfaceAndvolume();
 			changeTab(2);
+			guides.pushGuide(box.min());
+			guides.pushGuide(box.max());
 			ui->flipAngleSpinBox->setEnabled(false);
 			ui->lightToleranceSpinBox->setEnabled(false);
 			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
@@ -438,6 +445,11 @@ void HFGui::afterLoadHFD()
 		mw.pushDrawableObject(&hfDecomposition, "Decomposition");
 		ui->exportDecompositionPushButton->setEnabled(true);
 		ui->nextPostProcessingPushButton->setEnabled(true);
+	}
+
+	for (const HFBox& b: hfEngine.boxes()){
+		guides.pushGuide(b.min());
+		guides.pushGuide(b.max());
 	}
 	mw.canvas.fitScene();
 	mw.canvas.update();
@@ -854,6 +866,9 @@ void HFGui::finishDecomposition()
 	mw.deleteDrawableObject(&box);
 	mesh = hfEngine.mesh();
 	mw.refreshDrawableObject(&mesh);
+	guides.setDrawX(false);
+	guides.setDrawY(false);
+	guides.setDrawZ(false);
 
 	mw.canvas.update();
 }
@@ -916,15 +931,24 @@ void HFGui::on_exportDecompositionPushButton_clicked()
 void HFGui::on_nextPostProcessingPushButton_clicked()
 {
 	changeTab(4);
+	mw.setDrawableObjectVisibility(&hfDecomposition, false);
 }
 
 void HFGui::on_smartPackingPushButton_clicked()
 {
 	hfEngine.rotateAllBlocks();
-	hfDecomposition.clear();
+	packing.clear();
 	uint i = 0;
-	for (const cg3::Dcel& d : hfEngine.decomposition())
-		hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
+	for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
+		packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i));
+		uint j = 0;
+		for (const cg3::Dcel& d : stock)
+			packing.at(i).pushBack(d, "Block " + std::to_string(j++));
+		i++;
+	}
+
+	mw.pushDrawableObject(&packing, "Packing");
+
 	mw.canvas.update();
 }
 

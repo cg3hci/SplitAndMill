@@ -9,6 +9,8 @@
 
 #include <cg3/meshes/dcel/dcel.h>
 
+namespace restoreHF {
+
 bool validateMove(
 		const cg3::Dcel::Vertex* v,
 		cg3::Vec3d dir,
@@ -23,5 +25,7 @@ void restoreHighHrequenciesGaussSeidel(
 		const std::vector<cg3::Vec3d>& hfDirections,
 		const int nIters,
 		double flipAngle);
+
+}
 
 #endif // HIGH_FREQUENCIES_RESTORE_H

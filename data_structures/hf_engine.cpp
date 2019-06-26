@@ -12,6 +12,7 @@
 #include <cg3/cgal/aabb_tree3.h>
 
 #include "high_frequencies_restore.h"
+#include "packing.h"
 
 HFEngine::HFEngine() :
 	useSmoothedMesh(false)
@@ -97,7 +98,7 @@ void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 {
 	std::vector<cg3::Vec3d> dirs = restoreHighFrequenciesDirs();
 
-	restoreHighHrequenciesGaussSeidel(_mesh, _originalMesh, dirs, nIterations, flipAngle);
+	restoreHF::restoreHighHrequenciesGaussSeidel(_mesh, _originalMesh, dirs, nIterations, flipAngle);
 }
 
 double HFEngine::hausdorffDistance() const
@@ -130,27 +131,19 @@ std::vector<cg3::Dcel> &HFEngine::decomposition()
 
 void HFEngine::rotateAllBlocks()
 {
-	for (unsigned int i = 0; i < _boxes.size(); i++){
-		cg3::Vec3d normal = cg3::AXIS[_boxes[i].millingDirection()];
-		normal.rotate(_boxes[i].rotationMatrix().transpose());
-		cg3::Vec3d axis = normal.cross(cg3::Z_AXIS);
-		axis.normalize();
-		double dot = normal.dot(cg3::Z_AXIS);
-		double angle = acos(dot);
+	_packing.resize(1);
+	_packing[0] = _decomposition;
+	packing::rotateAllBlocks(_boxes, _packing[0]);
+}
 
-		Eigen::Matrix3d r = Eigen::Matrix3d::Identity();
-		if (normal != cg3::Z_AXIS){
-			if (normal == -cg3::Z_AXIS){
-				axis = cg3::Vec3d(1,0,0);
-			}
-			cg3::rotationMatrix(axis, angle, r);
-		}
-		_decomposition[i].rotate(r);
-		_decomposition[i].updateBoundingBox();
+std::vector<std::vector<cg3::Dcel>> HFEngine::packing() const
+{
+	return _packing;
+}
 
-		_decomposition[i].translate(cg3::Point3d(0,0,-_decomposition[i].boundingBox().min().z()));
-		_decomposition[i].updateBoundingBox();
-	}
+std::vector<std::vector<cg3::Dcel>> &HFEngine::packing()
+{
+	return _packing;
 }
 
 cg3::Dcel HFEngine::mesh() const
@@ -165,10 +158,10 @@ cg3::Dcel HFEngine::originalMesh() const
 
 void HFEngine::serialize(std::ofstream &binaryFile) const
 {
-	cg3::serializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition);
+	cg3::serializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition, _packing);
 }
 
 void HFEngine::deserialize(std::ifstream &binaryFile)
 {
-	cg3::deserializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition);
+	cg3::deserializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition, _packing);
 }

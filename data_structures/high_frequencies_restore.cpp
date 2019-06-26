@@ -7,6 +7,8 @@
 #include "high_frequencies_restore.h"
 #include <cg3/geometry/triangle3.h>
 
+namespace restoreHF {
+
 bool validateMove(
 		const cg3::Dcel::Vertex* v,
 		cg3::Vec3d dir,
@@ -94,4 +96,6 @@ void restoreHighHrequenciesGaussSeidel(
 		}
 	}
 	smoothMesh.updateVertexNormals();
+}
+
 }
