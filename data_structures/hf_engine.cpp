@@ -11,6 +11,8 @@
 #include <cg3/libigl/mesh_distance.h>
 #include <cg3/cgal/aabb_tree3.h>
 
+#include "lib/packing/binpack2d.h"
+
 #include "high_frequencies_restore.h"
 #include "packing.h"
 
@@ -129,11 +131,61 @@ std::vector<cg3::Dcel> &HFEngine::decomposition()
 	return _decomposition;
 }
 
-void HFEngine::rotateAllBlocks()
+std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double& factor)
 {
-	_packing.resize(1);
-	_packing[0] = _decomposition;
-	packing::rotateAllBlocks(_boxes, _packing[0]);
+	//rotation
+	std::vector<cg3::Dcel> tmpPacking = _decomposition;
+	packing::rotateAllBlocks(_boxes, tmpPacking);
+
+	//scaling
+	cg3::BoundingBox3 actualStock(stock.min(), cg3::Point3d(stock.maxX()-clearnessStock.x(), stock.maxY()-clearnessStock.x(), stock.maxZ()-clearnessStock.y()));
+	toolLength -= clearnessTool;
+
+	double sizesFactor, toolFactor;
+	packing::worstBlockForStock(tmpPacking, actualStock, sizesFactor);
+	packing::worstBlockForToolLength(tmpPacking, toolLength, toolFactor);
+
+	factor = sizesFactor < toolFactor ? sizesFactor : toolFactor;
+
+	for (cg3::Dcel& b : tmpPacking){
+		b.scale(factor);
+		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+		b.translate(dir);
+	}
+	return tmpPacking;
+}
+
+void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength, double distanceBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool)
+{
+	_packing.clear();
+
+	double factor;
+	std::vector<cg3::Dcel> tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool, factor);
+
+	//packing
+	std::vector< std::vector<std::pair<int, cg3::Point3d> > > packs =
+			packing::packing(tmpPacking, stock, distanceBetweenblocks);
+
+	uint i = 0;
+	for (const auto& pack : packs){
+		_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
+		uint j = 0;
+		for (const std::pair<int, cg3::Point3d>& p : pack){
+			bool rotated = false;
+			if (p.first < 0)
+				rotated = true;
+
+			_packing[i][j] = tmpPacking[std::abs(p.first)-1];
+			if (rotated) {
+				_packing[i][j].rotate(cg3::Z_AXIS, M_PI/2);
+				_packing[i][j].translate(stock.min() - _packing[i][j].boundingBox().min());
+			}
+			_packing[i][j].translate(p.second - stock.min());
+			j++;
+		}
+		i++;
+	}
+
 }
 
 std::vector<std::vector<cg3::Dcel>> HFEngine::packing() const

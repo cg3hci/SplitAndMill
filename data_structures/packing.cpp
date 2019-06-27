@@ -7,6 +7,7 @@
 #include "packing.h"
 
 #include <cg3/cgal/minimum_bbox2.h>
+#include "lib/packing/binpack2d.h"
 
 namespace packing {
 
@@ -65,9 +66,9 @@ double maxToolLengthBlock(const cg3::Dcel& block)
  * @param length
  * @return the id of the worst block
  */
-uint worstBlockForToolLength(const std::vector<cg3::Dcel> &decomposition, double& length)
+uint worstBlockForToolLength(const std::vector<cg3::Dcel> &decomposition, double toolLength, double& factor)
 {
-	length = 0;
+	double length = 0;
 	uint worst = 0;
 	uint i = 0;
 	for (const cg3::Dcel& b : decomposition){
@@ -78,7 +79,148 @@ uint worstBlockForToolLength(const std::vector<cg3::Dcel> &decomposition, double
 		}
 		++i;
 	}
+	factor = toolLength / length;
 	return worst;
+}
+
+void minMaxEdge(const cg3::BoundingBox3& bb, double& min, double& max){
+	if (bb.lengthX() < bb.lengthY()){
+		min = bb.lengthX();
+		max = bb.lengthY();
+	}
+	else {
+		min = bb.lengthY();
+		max = bb.lengthX();
+	}
+}
+
+uint worstBlockForStock(const std::vector<cg3::Dcel> &decomposition, const cg3::BoundingBox3& stock, double& factor){
+	//looking for the worst for minEdge, maxEdge and Z
+	uint worstMinEdge = 0, worstMaxEdge = 0, worstZ = 0;
+	double maxMinEdge = 0, maxMaxEdge = 0, maxZ = 0;
+	uint i = 0;
+	for (const cg3::Dcel& block : decomposition){
+		cg3::BoundingBox3 bb = block.boundingBox();
+		double minEdge, maxEdge;
+		double z = bb.lengthZ();
+		minMaxEdge(bb, minEdge, maxEdge);
+		if (minEdge > maxMaxEdge){
+			maxMinEdge = minEdge;
+			worstMinEdge = i;
+		}
+		if (maxEdge > maxMaxEdge){
+			maxMaxEdge = maxEdge;
+			worstMaxEdge = i;
+		}
+		if (z > maxZ){
+			maxZ = z;
+			worstZ = i;
+		}
+		i++;
+	}
+
+	double minStock, maxStock;
+
+	minMaxEdge(stock, minStock, maxStock);
+
+	//ratios will contain the maximum number of blocks that can be inserted in the stock in that direction
+	double minRatio = minStock / maxMinEdge, maxRatio = maxStock / maxMaxEdge, zRatio = stock.lengthZ() / maxZ;
+
+	if (minRatio <= maxRatio && minRatio <= zRatio){
+		factor = minRatio;
+		return worstMinEdge;
+	}
+	else if (maxRatio <= minRatio && maxRatio <= zRatio){
+		factor = maxRatio;
+		return worstMaxEdge;
+	}
+	else{
+		factor = zRatio;
+		return worstZ;
+	}
+}
+
+std::vector< std::vector<std::pair<int, cg3::Point3d> > > packing(const std::vector<cg3::Dcel>& blocks, const cg3::BoundingBox3& stock, double distanceBetweenblocks)
+{
+	std::vector< std::vector<std::pair<int, cg3::Point3d> > > packs;
+	std::set<uint> unpackedBlocks;
+	uint lastUnpackedBlocksSize = 0;
+	for (uint i = 0; i < blocks.size(); ++i) unpackedBlocks.insert(i);
+
+	while(unpackedBlocks.size() > 0 && lastUnpackedBlocksSize != unpackedBlocks.size()){
+		lastUnpackedBlocksSize = unpackedBlocks.size();
+
+		std::vector<std::pair<int, cg3::Point3d> > actualPack;
+
+		// Create some 'content' to work on.
+		BinPack2D::ContentAccumulator<int> inputContent;
+
+		for(uint i : unpackedBlocks) {
+
+			// random size for this content
+			int width  = blocks[i].boundingBox().lengthX() + distanceBetweenblocks;
+			int height = blocks[i].boundingBox().lengthY() + distanceBetweenblocks;
+
+			// whatever data you want to associate with this content
+
+			int mycontent= i;
+
+			// Add it
+			inputContent += BinPack2D::Content<int>(mycontent, BinPack2D::Coord(), BinPack2D::Size(width, height), false);
+		}
+		// Sort the input content by size... usually packs better.
+		inputContent.Sort();
+
+		// Create some bins!
+		BinPack2D::CanvasArray<int> canvasArray =
+				BinPack2D::UniformCanvasArrayBuilder<int>(stock.lengthX(),stock.lengthY(),1).Build();
+
+		// A place to store content that didnt fit into the canvas array.
+		BinPack2D::ContentAccumulator<int> remainder;
+
+		// try to pack content into the bins.
+		canvasArray.Place( inputContent, remainder );
+
+		// A place to store packed content.
+		BinPack2D::ContentAccumulator<int> outputContent;
+
+		// Read all placed content.
+		canvasArray.CollectContent( outputContent );
+
+		// parse output.
+		typedef BinPack2D::Content<int>::Vector::iterator binpack2d_iterator;
+		//printf("PLACED:\n");
+		for( binpack2d_iterator itor = outputContent.Get().begin(); itor != outputContent.Get().end(); itor++ ) {
+
+			const BinPack2D::Content<int> &content = *itor;
+
+			// retreive your data.
+			const int &myContent = content.content;
+
+			unpackedBlocks.erase((uint)myContent);
+
+			cg3::Point3d pos((double)content.coord.x, (double)content.coord.y, (double)content.coord.z);
+
+			std::pair<int, cg3::Point3d> pair;
+			pair.first = content.rotated ? -(myContent+1): (myContent+1);
+			pair.second = pos;
+			actualPack.push_back(pair);
+
+			/*printf("\t%d of size %3dx%3d at position %3d,%3d,%2d rotated=%s\n\n",
+				   myContent,
+				   content.size.w,
+				   content.size.h,
+				   content.coord.x,
+				   content.coord.y,
+				   content.coord.z,
+				   (content.rotated ? "yes":" no"));*/
+		}
+		if (actualPack.size() > 0)
+			packs.push_back(actualPack);
+	}
+	if (unpackedBlocks.size() > 0)
+		std::cerr << "Some pieces cannot be putted on a pack with the given sizes\n";
+	return packs;
 }
 
 }

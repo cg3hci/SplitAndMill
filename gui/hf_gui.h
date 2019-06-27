@@ -146,7 +146,19 @@ private slots:
 
 	//packing
 
-	void on_smartPackingPushButton_clicked();
+	void on_xStockSpinBox_valueChanged(int arg1);
+
+	void on_yStockSpinBox_valueChanged(int arg1);
+
+	void on_zStockSpinBox_valueChanged(int arg1);
+
+	void on_clearPackingPushButton_clicked();
+
+	void on_packPushButton_clicked();
+
+	void on_packOneStockButton_clicked();
+
+	void on_savePackingPushButton_clicked();
 
 	//test frame
 	void on_testOrTrianglesCheckBox_stateChanged(int arg1);

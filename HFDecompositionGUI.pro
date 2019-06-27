@@ -58,7 +58,8 @@ HEADERS += \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
     gui/rotatable_mesh.h \
-    gui/thread_worker.h
+    gui/thread_worker.h \
+    lib/packing/binpack2d.h
 
 
 SOURCES += \

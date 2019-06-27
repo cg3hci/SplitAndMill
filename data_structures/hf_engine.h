@@ -29,7 +29,8 @@ public:
 	std::vector<cg3::Dcel> decomposition() const;
 	std::vector<cg3::Dcel>& decomposition();
 
-	void rotateAllBlocks();
+	std::vector<cg3::Dcel> packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double &factor);
+	void comutePackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1);
 
 	std::vector<std::vector<cg3::Dcel> > packing() const;
 	std::vector<std::vector<cg3::Dcel> >& packing();

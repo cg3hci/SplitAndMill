@@ -110,12 +110,15 @@ void HFGui::clear()
 	mw.deleteDrawableObject(&box);
 	mw.deleteDrawableObject(&hfDecomposition);
 	mw.deleteDrawableObject(&rotatableMesh);
+	mw.deleteDrawableObject(&stock);
+	mw.deleteDrawableObject(&packing);
 	hfDecomposition.clear();
 	hfEngine.clear();
 	actions.clear();
 	actualAction = 0;
 	mw.canvas.update();
 	guides.clear();
+	packing.clear();
 
 	ui->tabWidget->setCurrentIndex(0);
 	ui->tabWidget->setEnabled(false);
@@ -235,7 +238,7 @@ void HFGui::colorTestMesh()
 
 void HFGui::undo()
 {
-	if (actualAction != 0){
+	if (actualAction != 0 && actualTab <= 2){
 		actualAction--;
 		switch(actions[actualAction].type()){
 		case UserAction::SMOOTHING :
@@ -285,7 +288,7 @@ void HFGui::undo()
 
 void HFGui::redo()
 {
-	if (actualAction < actions.size()){
+	if (actualAction < actions.size() && actualTab <= 2){
 		Eigen::Matrix3d rot;
 		switch(actions[actualAction].type()){
 		case UserAction::SMOOTHING :
@@ -392,7 +395,7 @@ void HFGui::on_loadHFDPushButton_clicked()
 			uint v;
 			cg3::deserialize(v, myfile);
 			cg3::deserializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
-										   totalSurface, totalVolume, remainingSurface, remainingVolume);
+										   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
 			myfile.close();
 			afterLoadHFD();
 		}
@@ -428,24 +431,32 @@ void HFGui::afterLoadHFD()
 			box.setDrawArrow(true);
 		}
 	}
-	if (actualTab == 3 && hfEngine.usesSmoothedMesh()){
-		ui->restoreHighFrequenciesPushButton->setEnabled(true);
-		ui->nRestoreIterationsSpinBox->setEnabled(true);
-		ui->nRestoreIterationsLabel->setEnabled(true);
-		ui->hausDescrLabel->setEnabled(true);
-		ui->hausdorffDistanceLabel->setEnabled(true);
-	}
-	if (hfEngine.decomposition().size() > 0){
-		hfDecomposition.clear();
-		uint i = 0;
-		for (const cg3::Dcel& d : hfEngine.decomposition())
-			hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
-		mw.setDrawableObjectVisibility(&mesh, false);
-		mw.setDrawableObjectVisibility(&originalMesh, false);
+	if (actualTab >= 3)
 		mw.pushDrawableObject(&hfDecomposition, "Decomposition");
-		ui->exportDecompositionPushButton->setEnabled(true);
-		ui->nextPostProcessingPushButton->setEnabled(true);
+	if (actualTab == 3){
+		if (hfEngine.decomposition().size() > 0){
+			hfDecomposition.clear();
+			uint i = 0;
+			for (const cg3::Dcel& d : hfEngine.decomposition())
+				hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
+			mw.setDrawableObjectVisibility(&mesh, false);
+			mw.setDrawableObjectVisibility(&originalMesh, false);
+			mw.pushDrawableObject(&hfDecomposition, "Decomposition");
+			ui->exportDecompositionPushButton->setEnabled(true);
+			ui->nextPostProcessingPushButton->setEnabled(true);
+		}
+		if (hfEngine.usesSmoothedMesh()) {
+			ui->restoreHighFrequenciesPushButton->setEnabled(true);
+			ui->nRestoreIterationsSpinBox->setEnabled(true);
+			ui->nRestoreIterationsLabel->setEnabled(true);
+			ui->hausDescrLabel->setEnabled(true);
+			ui->hausdorffDistanceLabel->setEnabled(true);
+		}
 	}
+	if (actualTab == 4){
+
+	}
+
 
 	for (const HFBox& b: hfEngine.boxes()){
 		guides.pushGuide(b.min());
@@ -466,7 +477,7 @@ void HFGui::on_saveHFDPushButton_clicked()
 		if (myfile.is_open()){
 			cg3::serialize(version, myfile);
 			cg3::serializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
-										   totalSurface, totalVolume, remainingSurface, remainingVolume);
+										   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
 			myfile.close();
 		}
 	}
@@ -931,16 +942,52 @@ void HFGui::on_exportDecompositionPushButton_clicked()
 void HFGui::on_nextPostProcessingPushButton_clicked()
 {
 	changeTab(4);
+	ui->clearPackingPushButton->setEnabled(false);
+	ui->savePackingPushButton->setEnabled(false);
 	mw.setDrawableObjectVisibility(&hfDecomposition, false);
+	stock.setMin(cg3::Point3d(0, 0, 0));
+	stock.setMax(cg3::Point3d(ui->xStockSpinBox->value(), ui->yStockSpinBox->value(), ui->zStockSpinBox->value()));
+	mw.pushDrawableObject(&stock, "Stock");
+	mw.canvas.fitScene();
+	mw.canvas.update();
 }
 
-void HFGui::on_smartPackingPushButton_clicked()
+void HFGui::on_xStockSpinBox_valueChanged(int arg1)
 {
-	hfEngine.rotateAllBlocks();
+	stock.setMaxX(arg1);
+	mw.canvas.update();
+}
+
+void HFGui::on_yStockSpinBox_valueChanged(int arg1)
+{
+	stock.setMaxY(arg1);
+	mw.canvas.update();
+}
+
+void HFGui::on_zStockSpinBox_valueChanged(int arg1)
+{
+	stock.setMaxZ(arg1);
+	mw.canvas.update();
+}
+
+void HFGui::on_clearPackingPushButton_clicked()
+{
 	packing.clear();
+	mw.deleteDrawableObject(&packing);
+	ui->clearPackingPushButton->setEnabled(false);
+	ui->savePackingPushButton->setEnabled(false);
+	mw.canvas.update();
+}
+
+void HFGui::on_packPushButton_clicked()
+{
+	hfEngine.comutePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value());
+	packing.clear();
+
 	uint i = 0;
 	for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
-		packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i));
+		bool vis = i == 0;
+		packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
 		uint j = 0;
 		for (const cg3::Dcel& d : stock)
 			packing.at(i).pushBack(d, "Block " + std::to_string(j++));
@@ -948,8 +995,25 @@ void HFGui::on_smartPackingPushButton_clicked()
 	}
 
 	mw.pushDrawableObject(&packing, "Packing");
-
+	ui->clearPackingPushButton->setEnabled(true);
+	ui->savePackingPushButton->setEnabled(true);
 	mw.canvas.update();
+}
+
+void HFGui::on_packOneStockButton_clicked()
+{
+	packing.clear();
+
+	//...
+	mw.pushDrawableObject(&packing, "Packing");
+	ui->clearPackingPushButton->setEnabled(true);
+	ui->savePackingPushButton->setEnabled(true);
+	mw.canvas.update();
+}
+
+void HFGui::on_savePackingPushButton_clicked()
+{
+
 }
 
 void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
