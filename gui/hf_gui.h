@@ -56,6 +56,7 @@ signals:
 	void computeDecomposition(HFEngine*);
 	void computeDecompositionExact(HFEngine*);
 	void cut(cg3::Dcel, HFBox);
+	void packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double);
 
 private slots:
 
@@ -157,6 +158,7 @@ private slots:
 	void on_packPushButton_clicked();
 
 	void on_packOneStockButton_clicked();
+	void packInOneStockCompleted(bool success, double factor, std::vector<std::pair<int, cg3::Point3d>> pack);
 
 	void on_savePackingPushButton_clicked();
 
@@ -204,6 +206,7 @@ private:
 	std::vector<UserAction> actions;
 	uint actualAction;
 
+	std::vector<cg3::Dcel> tmpPacking;
 	const uint version = 1;
 
 };

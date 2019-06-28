@@ -56,6 +56,8 @@ HFGui::HFGui(QWidget *parent) :
 	qRegisterMetaType<HFBox>("HFBox");
 	qRegisterMetaType<HFEngine*>("HFEngine*");
 	qRegisterMetaType<std::vector<cg3::Dcel>>("std::vector<cg3::Dcel>");
+	qRegisterMetaType<cg3::BoundingBox3>("cg3::BoundingBox3");
+	qRegisterMetaType<std::vector<std::pair<int, cg3::Point3d>>>("std::vector<std::pair<int, cg3::Point3d>>");
 
 	connect(tw, SIGNAL(setProgressBarValue(uint)),
 			this, SLOT(setProgressBarValue(uint)));
@@ -92,6 +94,12 @@ HFGui::HFGui(QWidget *parent) :
 
 	connect(tw, SIGNAL(computeDecompositionCompleted(std::vector<cg3::Dcel>)),
 			this, SLOT(computeDecompositionCompleted(std::vector<cg3::Dcel>)));
+
+	connect(this, SIGNAL(packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double)),
+			tw, SLOT(packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double)));
+
+	connect(tw, SIGNAL(packInOneStockCompleted(bool, double, std::vector<std::pair<int, cg3::Point3d>>)),
+			this, SLOT(packInOneStockCompleted(bool, double, std::vector<std::pair<int, cg3::Point3d>>)));
 
 	workerThread.start();
 }
@@ -404,6 +412,14 @@ void HFGui::on_loadHFDPushButton_clicked()
 
 void HFGui::afterLoadHFD()
 {
+	for (auto& d : hfDecomposition){
+		d.update();
+	}
+	for (auto& v : packing){
+		for (auto& d : v){
+			d.update();
+		}
+	}
 	ui->saveHFDPushButton->setEnabled(true);
 	ui->tabWidget->setEnabled(true);
 	ui->tabWidget->setTabEnabled(0, false);
@@ -431,8 +447,10 @@ void HFGui::afterLoadHFD()
 			box.setDrawArrow(true);
 		}
 	}
-	if (actualTab >= 3)
+	if (actualTab >= 3){
 		mw.pushDrawableObject(&hfDecomposition, "Decomposition");
+		mw.setDrawableObjectVisibility(&mesh, false);
+	}
 	if (actualTab == 3){
 		if (hfEngine.decomposition().size() > 0){
 			hfDecomposition.clear();
@@ -454,9 +472,32 @@ void HFGui::afterLoadHFD()
 		}
 	}
 	if (actualTab == 4){
+		mw.setDrawableObjectVisibility(&hfDecomposition, false);
+		ui->xStockSpinBox->setValue(stock.maxX());
+		ui->yStockSpinBox->setValue(stock.maxY());
+		ui->zStockSpinBox->setValue(stock.maxZ());
+		mw.pushDrawableObject(&stock, "Stock");
+		if (hfEngine.packing().size() > 0){
+			packing.clear();
+			uint i = 0;
+			for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
+				bool vis = i == 0;
+				packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
+				uint j = 0;
+				for (const cg3::Dcel& d : stock)
+					packing.at(i).pushBack(d, "Block " + std::to_string(j++));
+				i++;
+			}
 
+			mw.pushDrawableObject(&packing, "Packing");
+			ui->clearPackingPushButton->setEnabled(true);
+			ui->savePackingPushButton->setEnabled(true);
+		}
+		else {
+			ui->clearPackingPushButton->setEnabled(false);
+			ui->savePackingPushButton->setEnabled(false);
+		}
 	}
-
 
 	for (const HFBox& b: hfEngine.boxes()){
 		guides.pushGuide(b.min());
@@ -916,7 +957,8 @@ void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)
 	uint i = 0;
 	hfDecomposition.clear();
 	hfEngine.decomposition() = dec;
-	for (const cg3::Dcel& d : dec)
+	hfEngine.colorDecomposition();
+	for (const cg3::Dcel& d : hfEngine.decomposition())
 		hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
 
 	mw.setDrawableObjectVisibility(&mesh, false);
@@ -981,7 +1023,8 @@ void HFGui::on_clearPackingPushButton_clicked()
 
 void HFGui::on_packPushButton_clicked()
 {
-	hfEngine.comutePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value());
+	hfEngine.comutePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value(),
+											cg3::Point2d(5, 2), 1, ui->sizesFactorSpinBox->value());
 	packing.clear();
 
 	uint i = 0;
@@ -1002,18 +1045,57 @@ void HFGui::on_packPushButton_clicked()
 
 void HFGui::on_packOneStockButton_clicked()
 {
+	startWork();
 	packing.clear();
 
-	//...
-	mw.pushDrawableObject(&packing, "Packing");
-	ui->clearPackingPushButton->setEnabled(true);
-	ui->savePackingPushButton->setEnabled(true);
-	mw.canvas.update();
+	tmpPacking = hfEngine.packingPreProcessing(stock, ui->toolLengthSpinBox->value(), cg3::Point2d(5, 2), 1);
+	emit packInOneStock(tmpPacking, stock, ui->distBetweenBlocksSpinBox->value());
+}
+
+void HFGui::packInOneStockCompleted(bool success, double factor, std::vector<std::pair<int, cg3::Point3d> > pack)
+{
+	if (success) {
+		hfEngine.setOneStockPacking(tmpPacking, factor, stock, pack);
+
+		uint i = 0;
+		for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
+			bool vis = i == 0;
+			packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
+			uint j = 0;
+			for (const cg3::Dcel& d : stock)
+				packing.at(i).pushBack(d, "Block " + std::to_string(j++));
+			i++;
+		}
+
+		mw.pushDrawableObject(&packing, "Packing");
+		ui->clearPackingPushButton->setEnabled(true);
+		ui->savePackingPushButton->setEnabled(true);
+		mw.canvas.update();
+	}
+	else {
+		QMessageBox* box = new QMessageBox(&mw);
+		box->setWindowTitle("Failed to Pack in One Stock");
+		box->setText("It was not possible to pack the decomposition in a single "
+					 "stock of the given sizes.");
+		box->exec();
+	}
+	endWork();
 }
 
 void HFGui::on_savePackingPushButton_clicked()
 {
-
+	std::string folder = lsmesh.directoryDialog();
+	if (folder != ""){
+		stock.saveOnObj(folder + "/stock.obj");
+		uint i = 0;
+		for (const auto& p : packing){
+			uint j = 0;
+			for (const cg3::DrawableDcel& d : p){
+				d.saveOnObj(folder + "/stock_" + std::to_string(i) + "_block_" + std::to_string(j++) + ".obj");
+			}
+			i++;
+		}
+	}
 }
 
 void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)

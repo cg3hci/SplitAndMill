@@ -8,6 +8,7 @@
 #define HF_ENGINE_H
 
 #include <cg3/meshes/dcel/dcel.h>
+#include <cg3/cgal/aabb_tree3.h>
 #include "hf_box.h"
 
 class HFEngine : public cg3::SerializableObject
@@ -26,11 +27,13 @@ public:
 	void restoreHighFrequencies(uint nIterations, double flipAngle);
 	double hausdorffDistance() const;
 	void computeDecomposition();
+	void colorDecomposition();
 	std::vector<cg3::Dcel> decomposition() const;
 	std::vector<cg3::Dcel>& decomposition();
 
-	std::vector<cg3::Dcel> packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double &factor);
-	void comutePackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1);
+	std::vector<cg3::Dcel> packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor = 1);
+	void comutePackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1, double factor = 1);
+	void setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3 &stock, const std::vector<std::pair<int, cg3::Point3d> > &pack);
 
 	std::vector<std::vector<cg3::Dcel> > packing() const;
 	std::vector<std::vector<cg3::Dcel> >& packing();
@@ -49,6 +52,7 @@ private:
 	std::vector<HFBox> _boxes;
 	std::vector<cg3::Dcel> _decomposition;
 	std::vector<std::vector<cg3::Dcel>> _packing;
+	std::map<const cg3::Dcel::Vertex *, int> mappingVertexToBlock(const cg3::cgal::AABBTree3 &tree);
 };
 
 #endif // HF_ENGINE_H

@@ -34,6 +34,8 @@ public slots:
 
 	void computeDecompositionExact(HFEngine* hfEngine);
 
+	void packInOneStock(std::vector<cg3::Dcel> blocks, cg3::BoundingBox3 stock, double distanceBetweenBlocks);
+
 signals:
 	void setProgressBarValue(uint);
 	void taubinSmoothingCompleted(cg3::Dcel);
@@ -41,6 +43,7 @@ signals:
 	void cutCompleted(cg3::Dcel);
 	void restoreHighFrequenciesCompleted();
 	void computeDecompositionCompleted(std::vector<cg3::Dcel>);
+	void packInOneStockCompleted(bool, double, std::vector<std::pair<int, cg3::Point3d>>);
 
 
 };

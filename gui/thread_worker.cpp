@@ -13,7 +13,7 @@
 #include "data_structures/high_frequencies_restore.h"
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 #include <cg3/libigl/booleans.h>
-
+#include "data_structures/packing.h"
 
 ThreadWorker::ThreadWorker()
 {
@@ -162,4 +162,30 @@ void ThreadWorker::computeDecompositionExact(HFEngine* hfEngine){
 	}
 
 	emit computeDecompositionCompleted(dec);
+}
+
+void ThreadWorker::packInOneStock(std::vector<cg3::Dcel> blocks, cg3::BoundingBox3 stock, double distanceBetweenBlocks)
+{
+	double factor = 1;
+	double step = factor / 200;
+
+	std::vector< std::vector<std::pair<int, cg3::Point3d> > > packs;
+
+	do {
+		std::vector<cg3::Dcel> bl = blocks;
+		if (factor != 1){
+			for (cg3::Dcel& b : bl){
+				b.scale(factor);
+				cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+				b.translate(dir);
+			}
+		}
+
+		packs = packing::packing(bl, stock, distanceBetweenBlocks);
+
+		factor-= step;
+	} while(factor > 0 && packs.size() > 1);
+	std::cerr << factor << "\n";
+
+	emit packInOneStockCompleted(factor > 0, factor, packs[0]);
 }

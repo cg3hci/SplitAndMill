@@ -33,7 +33,7 @@ void rotateAllBlocks(const std::vector<HFBox> &boxes, std::vector<cg3::Dcel> &de
 
 		decomposition[i].translate(cg3::Point3d(0,0,-decomposition[i].boundingBox().min().z()));
 
-		std::vector<cg3::Point2d> rect = cg3::cgal::minRectangle2D(decomposition[i]);
+		/*std::vector<cg3::Point2d> rect = cg3::cgal::minRectangle2D(decomposition[i]);
 
 		cg3::Vec3d dir(rect[1].x() - rect[0].x(), rect[1].y() - rect[0].y(), 0);
 		dir.normalize();
@@ -42,7 +42,7 @@ void rotateAllBlocks(const std::vector<HFBox> &boxes, std::vector<cg3::Dcel> &de
 		//std::cerr << "Angle: " << angle << "\n";
 
 		decomposition[i].rotate(cg3::Z_AXIS, angle);
-		decomposition[i].updateBoundingBox();
+		decomposition[i].updateBoundingBox();*/
 
 		//std::cerr << "Area: " << _decomposition[i].boundingBox().lengthX() * _decomposition[i].boundingBox().lengthY() << "\n;
 	}

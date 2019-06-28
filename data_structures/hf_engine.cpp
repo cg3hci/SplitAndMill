@@ -121,6 +121,89 @@ void HFEngine::computeDecomposition()
 	}
 }
 
+std::map< const cg3::Dcel::Vertex*, int > HFEngine::mappingVertexToBlock(const cg3::cgal::AABBTree3& tree){
+	std::map< const cg3::Dcel::Vertex*,int > mapping;
+
+	for (uint i = 0; i < _decomposition.size(); i++){
+		for (cg3::Dcel::Vertex* vb : _decomposition[i].vertexIterator()){
+			const cg3::Dcel::Vertex* v = tree.nearestDcelVertex(vb->coordinate());
+			assert(v != nullptr);
+			if (v->coordinate().dist(vb->coordinate()) < cg3::EPSILON){
+				mapping[v] = i;
+			}
+			if (tree.squaredDistance(vb->coordinate() < cg3::EPSILON)){
+				vb->setNormal(v->normal());
+			}
+		}
+	}
+	return mapping;
+}
+
+void HFEngine::colorDecomposition()
+{
+	constexpr int nColors = 9;
+	std::array<QColor, nColors> colors;
+	colors[0] = QColor(221, 126, 107); //
+	colors[1] = QColor(255, 229, 153); //
+	colors[2] = QColor(164, 194, 244); //
+	colors[3] = QColor(213, 166, 189); //
+	colors[4] = QColor(234, 153, 153); //
+	colors[5] = QColor(182, 215, 168); //
+	colors[6] = QColor(249, 203, 156);//
+	colors[7] = QColor(180, 167, 214);//
+	colors[8] = QColor(162, 196, 201);
+
+	cg3::cgal::AABBTree3 tree(_mesh);
+
+	std::map< const cg3::Dcel::Vertex*, int > mapping = mappingVertexToBlock(tree);
+	std::vector< std::set<int> > adjacences(_decomposition.size());
+	for (const cg3::Dcel::Vertex* v : _mesh.vertexIterator()){
+		if (mapping.find(v) != mapping.end()){
+			int hev = mapping[v];
+			for (const cg3::Dcel::Vertex* adj : v->adjacentVertexIterator()){
+				if (mapping.find(adj) != mapping.end()){
+					int headj = mapping[adj];
+					if (hev != headj){
+						adjacences[hev].insert(headj);
+						adjacences[headj].insert(hev);
+					}
+				}
+			}
+		}
+	}
+
+	std::vector<bool> colored(_decomposition.size(), false);
+	std::vector<cg3::Color> heColors(_decomposition.size(), cg3::Color(0,0,0));
+	for (unsigned int i = 0; i < _decomposition.size(); i++){
+		if (!colored[i]){
+			std::set<cg3::Color> adjColors;
+			for (int adj : adjacences[i]){
+				if (colored[adj])
+					adjColors.insert(heColors[adj]);
+			}
+
+			cg3::Color color;
+			bool finded = false;
+			unsigned int k = i % nColors;
+			do {
+				if (adjColors.find(colors[k]) == adjColors.end()){
+					finded = true;
+					color = colors[k];
+				}
+				k = (k+1)%nColors;
+			} while(k != i %nColors && !finded);
+
+			if (finded)
+				heColors[i] = color;
+			else
+				heColors[i] = cg3::Color(0,0,0);
+			colored[i] = true;
+
+			_decomposition[i].setFaceColors(color);
+		}
+	}
+}
+
 std::vector<cg3::Dcel> HFEngine::decomposition() const
 {
 	return _decomposition;
@@ -131,7 +214,7 @@ std::vector<cg3::Dcel> &HFEngine::decomposition()
 	return _decomposition;
 }
 
-std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double& factor)
+std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor)
 {
 	//rotation
 	std::vector<cg3::Dcel> tmpPacking = _decomposition;
@@ -145,7 +228,7 @@ std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& s
 	packing::worstBlockForStock(tmpPacking, actualStock, sizesFactor);
 	packing::worstBlockForToolLength(tmpPacking, toolLength, toolFactor);
 
-	factor = sizesFactor < toolFactor ? sizesFactor : toolFactor;
+	factor = (sizesFactor < toolFactor ? sizesFactor : toolFactor) * factor;
 
 	for (cg3::Dcel& b : tmpPacking){
 		b.scale(factor);
@@ -155,11 +238,10 @@ std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& s
 	return tmpPacking;
 }
 
-void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength, double distanceBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool)
+void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength, double distanceBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool, double factor)
 {
 	_packing.clear();
 
-	double factor;
 	std::vector<cg3::Dcel> tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool, factor);
 
 	//packing
@@ -186,6 +268,33 @@ void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, do
 		i++;
 	}
 
+}
+
+void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3& stock, const std::vector<std::pair<int, cg3::Point3d>>& pack)
+{
+	_packing.clear();
+
+	for (cg3::Dcel& b : tmpPacking){
+		b.scale(factor);
+		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+		b.translate(dir);
+	}
+
+	_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
+	uint j = 0;
+	for (const std::pair<int, cg3::Point3d>& p : pack){
+		bool rotated = false;
+		if (p.first < 0)
+			rotated = true;
+
+		_packing[0][j] = tmpPacking[std::abs(p.first)-1];
+		if (rotated) {
+			_packing[0][j].rotate(cg3::Z_AXIS, M_PI/2);
+			_packing[0][j].translate(stock.min() - _packing[0][j].boundingBox().min());
+		}
+		_packing[0][j].translate(p.second - stock.min());
+		j++;
+	}
 }
 
 std::vector<std::vector<cg3::Dcel>> HFEngine::packing() const
