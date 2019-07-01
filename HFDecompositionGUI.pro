@@ -11,12 +11,18 @@ CONFIG(release, debug|release){
     #CONFIG += FINAL_RELEASE
 }
 
+CONFIG+=static
+
 # Final release optimization
 FINAL_RELEASE {
     unix:!macx{
         QMAKE_CXXFLAGS_RELEASE -= -g -O2
         QMAKE_CXXFLAGS += -Os -DNDEBUG
     }
+}
+
+win32{
+    VCGLIB_PATH=C:/dev/vcglib/
 }
 
 # cg3lib works with c++11
@@ -40,6 +46,7 @@ CONFIG += c++11
 #
 # Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_MESHES
 CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_ALGORITHMS CG3_MESHES CG3_CGAL CG3_LIBIGL CG3_VCGLIB CG3_CINOLIB
+CONFIG += CG3_WIN_MSVC
 #CONFIG += CG3_STATIC
 
 # Include the chosen modules
