@@ -22,7 +22,7 @@
 HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
-	mw((cg3::viewer::MainWindow&)*parent),
+	mw((HFMainWindow&)*parent),
 	actualRotationMatrix(Eigen::Matrix3d::Identity()),
 	actualTab(0),
 	rotatableMesh(mw.canvas),
@@ -109,6 +109,43 @@ HFGui::~HFGui()
 	workerThread.quit();
 	workerThread.wait();
 	delete ui;
+}
+
+bool HFGui::loadMesh()
+{
+	std::string filename = lsmesh.loadDialog("Load Mesh");
+	if (filename != ""){
+		cg3::Dcel tmp;
+		if(tmp.loadFromFile(filename)){
+			clear();
+			mesh = tmp;
+			mesh.translate(-mesh.boundingBox().center());
+			mesh.setFaceColors(cg3::GREY);
+			mesh.update();
+
+			mesh.setFaceFlags(0);
+
+			mw.pushDrawableObject(&mesh, "Loaded Mesh");
+			treeMesh = cg3::cgal::AABBTree3(mesh);
+			hfEngine.setMesh(mesh);
+
+			mw.canvas.fitScene();
+			mw.canvas.update();
+
+			ui->tabWidget->setEnabled(true);
+			ui->tabWidget->setTabEnabled(0, true);
+			ui->tabWidget->setTabEnabled(1, false);
+			ui->tabWidget->setTabEnabled(2, false);
+			ui->tabWidget->setTabEnabled(3, false);
+			ui->tabWidget->setTabEnabled(4, false);
+			ui->testFrame->setEnabled(true);
+			actualTab = 0;
+			ui->saveHFDPushButton->setEnabled(true);
+			guides.setBoundingBox(mesh.boundingBox());
+			return true;
+		}
+	}
+	return false;
 }
 
 void HFGui::clear()
@@ -351,39 +388,6 @@ void HFGui::redo()
 void HFGui::setProgressBarValue(uint value)
 {
 	ui->progressBar->setValue(value);
-}
-
-void HFGui::on_loadMeshPushButton_clicked()
-{
-	std::string filename = lsmesh.loadDialog("Load Mesh");
-	if (filename != ""){
-		clear();
-		if(mesh.loadFromFile(filename)){
-			mesh.translate(-mesh.boundingBox().center());
-			mesh.setFaceColors(cg3::GREY);
-			mesh.update();
-
-			mesh.setFaceFlags(0);
-
-			mw.pushDrawableObject(&mesh, "Loaded Mesh");
-			treeMesh = cg3::cgal::AABBTree3(mesh);
-			hfEngine.setMesh(mesh);
-
-			mw.canvas.fitScene();
-			mw.canvas.update();
-
-			ui->tabWidget->setEnabled(true);
-			ui->tabWidget->setTabEnabled(0, true);
-			ui->tabWidget->setTabEnabled(1, false);
-			ui->tabWidget->setTabEnabled(2, false);
-			ui->tabWidget->setTabEnabled(3, false);
-			ui->tabWidget->setTabEnabled(4, false);
-			ui->testFrame->setEnabled(true);
-			actualTab = 0;
-			ui->saveHFDPushButton->setEnabled(true);
-			guides.setBoundingBox(mesh.boundingBox());
-		}
-	}
 }
 
 void HFGui::on_clearPushButton_clicked()

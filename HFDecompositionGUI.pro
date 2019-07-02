@@ -62,6 +62,7 @@ HEADERS += \
     gui/arrow.h \
     gui/guides.h \
     gui/hf_gui.h \
+    gui/hfmainwindow.h \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
     gui/rotatable_mesh.h \
@@ -77,6 +78,7 @@ SOURCES += \
     data_structures/user_action.cpp \
     gui/guides.cpp \
     gui/hf_gui.cpp \
+    gui/hfmainwindow.cpp \
     gui/manipulable_boundingbox.cpp \
     gui/manipulable_sphere.cpp \
     gui/rotatable_mesh.cpp \
@@ -84,7 +86,8 @@ SOURCES += \
     main.cpp
 
 FORMS += \
-    gui/hf_gui.ui
+    gui/hf_gui.ui \
+    gui/hfmainwindow.ui
 
 RESOURCES += \
     res/res.qrc

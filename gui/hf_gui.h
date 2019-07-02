@@ -9,7 +9,7 @@
 
 #include <QFrame>
 #include <QThread>
-#include <cg3/viewer/mainwindow.h>
+#include "hfmainwindow.h"
 
 #include <cg3/viewer/drawable_objects/drawable_dcel.h>
 #include <cg3/viewer/drawable_objects/drawable_objects_container.h>
@@ -35,6 +35,7 @@ public:
 	explicit HFGui(QWidget *parent = 0);
 	~HFGui();
 
+	bool loadMesh();
 	void clear();
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
@@ -61,8 +62,6 @@ signals:
 private slots:
 
 	//load/save
-	void on_loadMeshPushButton_clicked();
-
 	void on_clearPushButton_clicked();
 
 	void on_loadHFDPushButton_clicked();
@@ -182,7 +181,7 @@ private:
 	QThread workerThread;
 
     //reference to the MainWindow
-    cg3::viewer::MainWindow& mw;
+	HFMainWindow& mw;
 	cg3::viewer::LoaderSaver lsmesh;
 	cg3::viewer::LoaderSaver lshfd;
 
