@@ -148,6 +148,8 @@ private slots:
 
     //Menu Actions
 	void on_actionLoad_Mesh_triggered();
+	void on_actionLoad_HFD_Project_triggered();
+	void on_actionSave_HFD_Project_triggered();
     void on_actionSave_Snapshot_triggered();
     void on_actionShow_Axis_triggered();
     void on_actionFull_Screen_toggled(bool arg1);
@@ -165,6 +167,8 @@ private slots:
     void on_actionShow_Unit_Box_triggered();
 
 	void on_loadToolButton_clicked();
+	void on_loadHFDToolButton_clicked();
+	void on_saveHFDToolButton_clicked();
 
 private:
 

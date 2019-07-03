@@ -55,14 +55,13 @@ void ThreadWorker::cut(cg3::Dcel mesh, HFBox hfbox)
 void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double flipAngle)
 {
 	cg3::Dcel smoothMesh = hfEngine->mesh();
-	std::vector<cg3::Vec3d> hfDirections = hfEngine->restoreHighFrequenciesDirs();
+	std::vector<HFBox> hfBoxes = hfEngine->restoreHighFrequenciesBoxes();
 	uint step = nIt / 10;
 
 	std::vector<cg3::Vec3d> diffCoords = restoreHF::differentialCoordinates(hfEngine->originalMesh());
 
-
 	for(uint i=0; i<nIt; ++i) {
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for(uint vid=0; vid<smoothMesh.numberVertices(); ++vid) {
 			//std::cerr << vid << "\n";
 			cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
@@ -77,12 +76,12 @@ void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double f
 
 				// do binary search until the new pos does not violate the hf condition...
 				int count = 0;
-				while(!restoreHF::validateMove(v, hfDirections.at(vid), newPos, flipAngle) && ++count<5) {
+				while(!restoreHF::validateMove(v, hfBoxes.at(vid), newPos, flipAngle) && ++count<5) {
 					newPos = 0.5 * (newPos + v->coordinate());
 				}
 
 				if (count < 5){
-					#pragma omp critical
+					//#pragma omp critical
 					{
 						v->setCoordinate(newPos);
 						for (cg3::Dcel::Face* f : v->incidentFaceIterator())

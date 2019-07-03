@@ -174,78 +174,7 @@
       <property name="horizontalSpacing">
        <number>6</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="loadMeshPushButton">
-        <property name="text">
-         <string>Load Mesh</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="loadHFDPushButton">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Load HFD Project</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="saveHFDPushButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Save HFD Project</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QSpinBox" name="lightToleranceSpinBox">
-        <property name="minimum">
-         <number>45</number>
-        </property>
-        <property name="maximum">
-         <number>145</number>
-        </property>
-        <property name="singleStep">
-         <number>10</number>
-        </property>
-        <property name="value">
-         <number>90</number>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="Line" name="line_8">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="clearPushButton">
-        <property name="text">
-         <string>Clear</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>Light Tolerance Angle (Yellow):</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>Flip Angle (Red):</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
+      <item row="2" column="1">
        <widget class="QSpinBox" name="flipAngleSpinBox">
         <property name="minimum">
          <number>60</number>
@@ -261,6 +190,36 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Light Tolerance Angle (Yellow):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QSpinBox" name="lightToleranceSpinBox">
+        <property name="minimum">
+         <number>45</number>
+        </property>
+        <property name="maximum">
+         <number>145</number>
+        </property>
+        <property name="singleStep">
+         <number>10</number>
+        </property>
+        <property name="value">
+         <number>90</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Flip Angle (Red):</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -270,7 +229,7 @@
       <bool>false</bool>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <property name="usesScrollButtons">
       <bool>false</bool>

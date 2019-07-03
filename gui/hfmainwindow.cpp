@@ -342,7 +342,33 @@ void HFMainWindow::keyPressEvent(QKeyEvent * event)
 
 void HFMainWindow::on_actionLoad_Mesh_triggered()
 {
-	hfFrame->loadMesh();
+	bool b = hfFrame->loadMesh();
+	if (b){
+		ui->actionLoad_Mesh->setEnabled(false);
+		ui->actionLoad_HFD_Project->setEnabled(false);
+		ui->actionSave_HFD_Project->setEnabled(true);
+		ui->loadToolButton->setEnabled(false);
+		ui->loadHFDToolButton->setEnabled(false);
+		ui->saveHFDToolButton->setEnabled(true);
+	}
+}
+
+void HFMainWindow::on_actionLoad_HFD_Project_triggered()
+{
+	bool b = hfFrame->loadHFD();
+	if (b){
+		ui->actionLoad_Mesh->setEnabled(false);
+		ui->actionLoad_HFD_Project->setEnabled(false);
+		ui->actionSave_HFD_Project->setEnabled(true);
+		ui->loadToolButton->setEnabled(false);
+		ui->loadHFDToolButton->setEnabled(false);
+		ui->saveHFDToolButton->setEnabled(true);
+	}
+}
+
+void HFMainWindow::on_actionSave_HFD_Project_triggered()
+{
+	hfFrame->saveHFD();
 }
 
 void HFMainWindow::on_actionSave_Snapshot_triggered()
@@ -439,11 +465,15 @@ void HFMainWindow::on_actionShow_Unit_Box_triggered()
 
 void HFMainWindow::on_loadToolButton_clicked()
 {
-	bool b = hfFrame->loadMesh();
-	if (b){
-		ui->actionLoad_Mesh->setEnabled(false);
-		ui->loadToolButton->setEnabled(false);
-		ui->loadHFDToolButton->setEnabled(false);
-		ui->saveHFDToolButton->setEnabled(true);
-	}
+	ui->actionLoad_Mesh->trigger();
+}
+
+void HFMainWindow::on_loadHFDToolButton_clicked()
+{
+	ui->actionLoad_HFD_Project->trigger();
+}
+
+void HFMainWindow::on_saveHFDToolButton_clicked()
+{
+	ui->actionSave_HFD_Project->trigger();
 }

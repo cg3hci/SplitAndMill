@@ -12,12 +12,12 @@
 class HFBox : public cg3::BoundingBox3
 {
 public:
-	typedef enum {PLUS_X = 0, PLUS_Y, PLUS_Z, MINUS_X, MINUS_Y, MINUS_Z} MillingDir;
+	typedef enum {NONE = -1, PLUS_X = 0, PLUS_Y, PLUS_Z, MINUS_X, MINUS_Y, MINUS_Z} MillingDir;
 	HFBox();
 	HFBox(const cg3::Point3d& min, const cg3::Point3d& max,
 		  const cg3::Vec3d& dir, const Eigen::Matrix3d& rot);
 	HFBox(const cg3::Point3d& min, const cg3::Point3d& max,
-		  uint dir, const Eigen::Matrix3d& rot);
+		  int dir, const Eigen::Matrix3d& rot);
 
 	MillingDir millingDirection() const;
 	Eigen::Matrix3d rotationMatrix() const;

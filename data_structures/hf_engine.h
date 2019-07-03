@@ -24,6 +24,7 @@ public:
 	void popBox();
 	const std::vector<HFBox>& boxes() const;
 	std::vector<cg3::Vec3d> restoreHighFrequenciesDirs() const;
+	std::vector<HFBox> restoreHighFrequenciesBoxes() const;
 	void restoreHighFrequencies(uint nIterations, double flipAngle);
 	double hausdorffDistance() const;
 	void computeDecomposition();

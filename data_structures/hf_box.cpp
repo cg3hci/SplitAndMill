@@ -26,12 +26,12 @@ HFBox::HFBox(const cg3::Point3d &min, const cg3::Point3d &max, const cg3::Vec3d 
 	assert(found);
 }
 
-HFBox::HFBox(const cg3::Point3d &min, const cg3::Point3d &max, uint dir, const Eigen::Matrix3d &rot) :
+HFBox::HFBox(const cg3::Point3d &min, const cg3::Point3d &max, int dir, const Eigen::Matrix3d &rot) :
 	cg3::BoundingBox3(min, max),
 	dir((MillingDir)dir),
 	rot(rot)
 {
-	assert(dir < 6);
+	assert(dir >= -1 && dir < 6);
 }
 
 HFBox::MillingDir HFBox::millingDirection() const

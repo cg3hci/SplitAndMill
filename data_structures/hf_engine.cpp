@@ -96,11 +96,43 @@ std::vector<cg3::Vec3d> HFEngine::restoreHighFrequenciesDirs() const
 	return dirs;
 }
 
+std::vector<HFBox> HFEngine::restoreHighFrequenciesBoxes() const
+{
+	Eigen::Matrix3d actualRot = Eigen::Matrix3d::Identity();
+	cg3::Dcel m = _mesh;
+	cg3::cgal::AABBTree3 tree(m);
+	HFBox nullBox(m.boundingBox().min(), m.boundingBox().max(), -1, Eigen::Matrix3d::Identity());
+
+	std::vector<HFBox> boxes(m.numberVertices(), nullBox);
+	std::vector<bool> visited(m.numberVertices(), false);
+
+	for (const HFBox& b : _boxes){
+		if (b.rotationMatrix() != actualRot){
+			actualRot = b.rotationMatrix();
+			m = _mesh;
+			m.rotate(actualRot);
+			tree = cg3::cgal::AABBTree3(m);
+		}
+
+		std::list<const cg3::Dcel::Face*> list = tree.containedDcelFaces(b);
+
+		for (const cg3::Dcel::Face* f : list){
+			for (const cg3::Dcel::Vertex* v : f->incidentVertexIterator()){
+				if (!visited[v->id()] && b.isInside(v->coordinate())){
+					visited[v->id()] = true;
+					boxes[v->id()] = b;
+				}
+			}
+		}
+	}
+	return boxes;
+}
+
 void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 {
-	std::vector<cg3::Vec3d> dirs = restoreHighFrequenciesDirs();
+	std::vector<HFBox> boxes = restoreHighFrequenciesBoxes();
 
-	restoreHF::restoreHighHrequenciesGaussSeidel(_mesh, _originalMesh, dirs, nIterations, flipAngle);
+	restoreHF::restoreHighHrequenciesGaussSeidel(_mesh, _originalMesh, boxes, nIterations, flipAngle);
 }
 
 double HFEngine::hausdorffDistance() const

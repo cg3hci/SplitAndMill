@@ -36,6 +36,9 @@ public:
 	~HFGui();
 
 	bool loadMesh();
+	bool loadHFD();
+	void afterLoadHFD();
+	bool saveHFD();
 	void clear();
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
@@ -63,11 +66,6 @@ private slots:
 
 	//load/save
 	void on_clearPushButton_clicked();
-
-	void on_loadHFDPushButton_clicked();
-	void afterLoadHFD();
-
-	void on_saveHFDPushButton_clicked();
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
