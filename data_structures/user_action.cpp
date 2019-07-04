@@ -38,6 +38,22 @@ UserAction::UserAction(const cg3::Dcel &mesh, uint nIters, double lambda, double
 {
 }
 
+UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel &restoredMesh, uint nIters, uint tab) :
+	actionType(RESTORE_HIGH_FREQ),
+	_mesh(mesh),
+	_restoredMesh(restoredMesh),
+	nIt(nIters),
+	_tab(tab)
+{
+}
+
+UserAction::UserAction(const std::vector<cg3::Dcel> &decomposition, uint tab) :
+	actionType(DECOMPOSITION),
+	_decomposition(decomposition),
+	_tab(tab)
+{
+}
+
 UserAction::ActionType UserAction::type() const
 {
 	return actionType;
@@ -46,6 +62,11 @@ UserAction::ActionType UserAction::type() const
 const cg3::Dcel &UserAction::mesh() const
 {
 	return _mesh;
+}
+
+const cg3::Dcel &UserAction::restoredMesh() const
+{
+	return _restoredMesh;
 }
 
 double UserAction::lambda() const
@@ -86,4 +107,9 @@ HFBox UserAction::box() const
 uint UserAction::tab() const
 {
 	return _tab;
+}
+
+const std::vector<cg3::Dcel> &UserAction::decomposition()
+{
+	return _decomposition;
 }

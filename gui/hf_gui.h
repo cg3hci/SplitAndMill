@@ -36,9 +36,14 @@ public:
 	~HFGui();
 
 	bool loadMesh();
-	bool loadHFD();
+	bool loadHFD(std::string &filename);
 	void afterLoadHFD();
-	bool saveHFD();
+	bool saveHFDAs(std::string &filename);
+	bool saveHFD(const std::string& filename);
+	bool decompositionComputed();
+	bool saveDecomposition();
+	bool packingComputed();
+	bool savePacking();
 	void clear();
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
@@ -63,9 +68,6 @@ signals:
 	void packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double);
 
 private slots:
-
-	//load/save
-	void on_clearPushButton_clicked();
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
@@ -138,8 +140,6 @@ private slots:
 	void on_computeDecompositionPushButton_clicked();
 	void computeDecompositionCompleted(std::vector<cg3::Dcel> dec);
 
-	void on_exportDecompositionPushButton_clicked();
-
 	void on_nextPostProcessingPushButton_clicked();
 
 	//packing
@@ -156,8 +156,6 @@ private slots:
 
 	void on_packOneStockButton_clicked();
 	void packInOneStockCompleted(bool success, double factor, std::vector<std::pair<int, cg3::Point3d>> pack);
-
-	void on_savePackingPushButton_clicked();
 
 	//test frame
 	void on_testOrTrianglesCheckBox_stateChanged(int arg1);

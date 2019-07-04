@@ -61,7 +61,7 @@ void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double f
 	std::vector<cg3::Vec3d> diffCoords = restoreHF::differentialCoordinates(hfEngine->originalMesh());
 
 	for(uint i=0; i<nIt; ++i) {
-		//#pragma omp parallel for
+		#pragma omp parallel for
 		for(uint vid=0; vid<smoothMesh.numberVertices(); ++vid) {
 			//std::cerr << vid << "\n";
 			cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
@@ -81,7 +81,7 @@ void ThreadWorker::restoreHighFrequencies(HFEngine* hfEngine, uint nIt, double f
 				}
 
 				if (count < 5){
-					//#pragma omp critical
+					#pragma omp critical
 					{
 						v->setCoordinate(newPos);
 						for (cg3::Dcel::Face* f : v->incidentFaceIterator())
@@ -184,7 +184,6 @@ void ThreadWorker::packInOneStock(std::vector<cg3::Dcel> blocks, cg3::BoundingBo
 
 		factor-= step;
 	} while(factor > 0 && packs.size() > 1);
-	std::cerr << factor << "\n";
 
 	emit packInOneStockCompleted(factor > 0, factor, packs[0]);
 }

@@ -76,6 +76,9 @@
     <addaction name="actionLoad_Mesh"/>
     <addaction name="actionLoad_HFD_Project"/>
     <addaction name="actionSave_HFD_Project"/>
+    <addaction name="actionSave_HFD_Project_As"/>
+    <addaction name="actionSave_Decomposition"/>
+    <addaction name="actionSave_Packing"/>
     <addaction name="separator"/>
     <addaction name="actionLoad_Point_of_View"/>
     <addaction name="actionLoad_Point_Of_View_from"/>
@@ -155,7 +158,7 @@
           <x>0</x>
           <y>0</y>
           <width>250</width>
-          <height>479</height>
+          <height>448</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2"/>
@@ -172,8 +175,17 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="minimumSize">
+    <size>
+     <width>399</width>
+     <height>50</height>
+    </size>
+   </property>
    <property name="features">
     <set>QDockWidget::NoDockWidgetFeatures</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
@@ -185,6 +197,16 @@
        <property name="text">
         <string>Load Mesh</string>
        </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/open-document-mesh.png</normaloff>:/open-document-mesh.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -192,12 +214,99 @@
        <property name="text">
         <string>Load HFD Project</string>
        </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/open-document-hfd.png</normaloff>:/open-document-hfd.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="saveHFDToolButton">
        <property name="text">
         <string>Save HFD Project</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/save-document-hfd.png</normaloff>:/save-document-hfd.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="saveDecompositionToolButton">
+       <property name="text">
+        <string>Save Decomposition</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/save-document-decomp.png</normaloff>:/save-document-decomp.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="savePackingToolButton">
+       <property name="text">
+        <string>save Packing</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/save-document-packing.png</normaloff>:/save-document-packing.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="showAxisToolButton">
+       <property name="text">
+        <string>Show Axis</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/axis.png</normaloff>:/axis.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+       <property name="autoRaise">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -381,6 +490,21 @@
     <string>Save HFD Project</string>
    </property>
   </action>
+  <action name="actionSave_Decomposition">
+   <property name="text">
+    <string>Save Decomposition</string>
+   </property>
+  </action>
+  <action name="actionSave_Packing">
+   <property name="text">
+    <string>Save Packing</string>
+   </property>
+  </action>
+  <action name="actionSave_HFD_Project_As">
+   <property name="text">
+    <string>Save HFD Project As...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -391,6 +515,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../res/res.qrc"/>
+ </resources>
  <connections/>
 </ui>

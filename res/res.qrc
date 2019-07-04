@@ -2,5 +2,11 @@
     <qresource prefix="/">
         <file>wait.gif</file>
         <file>green.ico</file>
+        <file>open-document-hfd.png</file>
+        <file>open-document-mesh.png</file>
+        <file>save-document-hfd.png</file>
+        <file>save-document-decomp.png</file>
+        <file>save-document-packing.png</file>
+        <file>axis.png</file>
     </qresource>
 </RCC>

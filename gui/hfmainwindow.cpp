@@ -38,7 +38,7 @@ public:
     UiMainWindowRaiiWrapper(QMainWindow *MainWindow)
     {
         setupUi(MainWindow);
-    }	
+    }		
 };
 } //namespace cg3::viewer::internal
 
@@ -51,7 +51,6 @@ HFMainWindow::HFMainWindow(QWidget* parent) :
 		AbstractMainWindow(parent),
         ui(new internal::UiMainWindowRaiiWrapper(this)),
 		hfFrame(nullptr),
-        first(true),
 		canvas(*ui->glCanvas)
 {
     scrollAreaLayout = new QVBoxLayout(ui->scrollArea);
@@ -67,10 +66,16 @@ HFMainWindow::HFMainWindow(QWidget* parent) :
     canvas.setSnapshotQuality(100);
     canvas.setSnapshotFormat("PNG");
 
-	ui->dockDrawList->setVisible(false);
+	//ui->dockDrawList->setVisible(false);
 
 	ui->saveHFDToolButton->setEnabled(false);
+	ui->savePackingToolButton->setEnabled(false);
+	ui->saveDecompositionToolButton->setEnabled(false);
 	ui->actionSave_HFD_Project->setEnabled(false);
+	ui->actionSave_Decomposition->setEnabled(false);
+	ui->actionSave_Packing->setEnabled(false);
+
+	setWindowTitle("Height-Field Decomposition - Unknown Project");
 }
 
 HFMainWindow::~HFMainWindow()
@@ -82,6 +87,43 @@ void HFMainWindow::setWidget(HFGui *frame)
 {
 	ui->dockToolBox->setWidget(frame);
 	hfFrame = frame;
+}
+
+void HFMainWindow::setLoadedButtons(bool b)
+{
+	//ui->actionLoad_Mesh->setEnabled(!b);
+	//ui->actionLoad_HFD_Project->setEnabled(!b);
+	ui->actionSave_HFD_Project->setEnabled(b);
+	//ui->loadToolButton->setEnabled(!b);
+	//ui->loadHFDToolButton->setEnabled(!b);
+	ui->saveHFDToolButton->setEnabled(b);
+	setSaveDecompositionButtons(b && hfFrame->decompositionComputed());
+	setSavePackingButtons(b && hfFrame->packingComputed());
+}
+
+void HFMainWindow::setSaveDecompositionButtons(bool b)
+{
+	ui->saveDecompositionToolButton->setEnabled(b);
+	ui->actionSave_Decomposition->setEnabled(b);
+}
+
+void HFMainWindow::setSavePackingButtons(bool b)
+{
+	ui->savePackingToolButton->setEnabled(b);
+	ui->actionSave_Packing->setEnabled(b);
+}
+
+void HFMainWindow::setSaved(bool b)
+{
+	saved = b;
+	if (saved) {
+		std::string pname = cg3::filenameWithoutExtension(fileHFD);
+		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname));
+	}
+	else {
+		std::string pname = cg3::filenameWithoutExtension(fileHFD);
+		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname) + "*");
+	}
 }
 
 /**
@@ -343,32 +385,40 @@ void HFMainWindow::keyPressEvent(QKeyEvent * event)
 void HFMainWindow::on_actionLoad_Mesh_triggered()
 {
 	bool b = hfFrame->loadMesh();
-	if (b){
-		ui->actionLoad_Mesh->setEnabled(false);
-		ui->actionLoad_HFD_Project->setEnabled(false);
-		ui->actionSave_HFD_Project->setEnabled(true);
-		ui->loadToolButton->setEnabled(false);
-		ui->loadHFDToolButton->setEnabled(false);
-		ui->saveHFDToolButton->setEnabled(true);
-	}
+	setLoadedButtons(b);
 }
 
 void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 {
-	bool b = hfFrame->loadHFD();
-	if (b){
-		ui->actionLoad_Mesh->setEnabled(false);
-		ui->actionLoad_HFD_Project->setEnabled(false);
-		ui->actionSave_HFD_Project->setEnabled(true);
-		ui->loadToolButton->setEnabled(false);
-		ui->loadHFDToolButton->setEnabled(false);
-		ui->saveHFDToolButton->setEnabled(true);
-	}
+	bool b = hfFrame->loadHFD(fileHFD);
+	setSaved(b);
+	setLoadedButtons(b);
 }
 
 void HFMainWindow::on_actionSave_HFD_Project_triggered()
 {
-	hfFrame->saveHFD();
+	if (fileHFD != "")
+		ui->actionSave_HFD_Project_As->trigger();
+	else{
+		bool b = hfFrame->saveHFD(fileHFD);
+		setSaved(b);
+	}
+}
+
+void HFMainWindow::on_actionSave_HFD_Project_As_triggered()
+{
+	bool b = hfFrame->saveHFDAs(fileHFD);
+	setSaved(b);
+}
+
+void HFMainWindow::on_actionSave_Decomposition_triggered()
+{
+	hfFrame->saveDecomposition();
+}
+
+void HFMainWindow::on_actionSave_Packing_triggered()
+{
+	hfFrame->savePacking();
 }
 
 void HFMainWindow::on_actionSave_Snapshot_triggered()
@@ -476,4 +526,20 @@ void HFMainWindow::on_loadHFDToolButton_clicked()
 void HFMainWindow::on_saveHFDToolButton_clicked()
 {
 	ui->actionSave_HFD_Project->trigger();
+}
+
+void HFMainWindow::on_saveDecompositionToolButton_clicked()
+{
+	ui->actionSave_Decomposition->trigger();
+}
+
+void HFMainWindow::on_savePackingToolButton_clicked()
+{
+	ui->actionSave_Packing->trigger();
+}
+
+void HFMainWindow::on_showAxisToolButton_toggled(bool b)
+{
+	if (b != ui->glCanvas->axisIsDrawn())
+		ui->actionShow_Axis->trigger();
 }
