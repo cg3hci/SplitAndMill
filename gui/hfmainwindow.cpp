@@ -386,15 +386,81 @@ void HFMainWindow::keyPressEvent(QKeyEvent * event)
 
 void HFMainWindow::on_actionLoad_Mesh_triggered()
 {
-	bool b = hfFrame->loadMesh();
-	setLoadedButtons(b);
+	bool load = true;
+	if (!saved){
+		std::string pname;
+		if (pname != "") pname = cg3::filenameWithoutExtension(fileHFD);
+		else pname = "Untilted Project";
+		QMessageBox* box = new QMessageBox(this);
+		box->setWindowTitle("");
+		box->setText("Save changes to " + QString::fromStdString(pname) + " before loading new mesh?");
+		box->addButton(QMessageBox::No);
+		box->button(QMessageBox::No)->setText("No");
+
+		box->addButton(QMessageBox::Ok);
+		box->button(QMessageBox::Ok)->setText("Yes");
+
+		box->addButton(QMessageBox::Cancel);
+		box->button(QMessageBox::Cancel)->setText("Cancel");
+
+		box->setEscapeButton(QMessageBox::No);
+		box->setDefaultButton(QMessageBox::Cancel);
+		int ret = box->exec();
+		if (ret == QMessageBox::No)
+			load = true;
+		else if (ret == QMessageBox::Ok){
+			ui->actionSave_HFD_Project->trigger();
+			if (!saved)
+				load = false;
+		}
+		else {
+			load = false;
+		}
+	}
+	if (load){
+		bool b = hfFrame->loadMesh();
+		setLoadedButtons(b);
+	}
 }
 
 void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 {
-	bool b = hfFrame->loadHFD(fileHFD);
-	setSaved(b);
-	setLoadedButtons(b);
+	bool load = true;
+	if (!saved){
+		std::string pname;
+		if (pname != "") pname = cg3::filenameWithoutExtension(fileHFD);
+		else pname = "Untilted Project";
+		QMessageBox* box = new QMessageBox(this);
+		box->setWindowTitle("");
+		box->setText("Save changes to " + QString::fromStdString(pname) + " before loading new project?");
+		box->addButton(QMessageBox::No);
+		box->button(QMessageBox::No)->setText("No");
+
+		box->addButton(QMessageBox::Ok);
+		box->button(QMessageBox::Ok)->setText("Yes");
+
+		box->addButton(QMessageBox::Cancel);
+		box->button(QMessageBox::Cancel)->setText("Cancel");
+
+		box->setEscapeButton(QMessageBox::No);
+		box->setDefaultButton(QMessageBox::Cancel);
+		int ret = box->exec();
+		if (ret == QMessageBox::No)
+			load = true;
+		else if (ret == QMessageBox::Ok){
+			ui->actionSave_HFD_Project->trigger();
+			if (!saved)
+				load = false;
+		}
+		else {
+			load = false;
+		}
+	}
+	if (load){
+		bool b = hfFrame->loadHFD(fileHFD);
+		setSaved(b);
+		setLoadedButtons(b);
+	}
 }
 
 void HFMainWindow::on_actionSave_HFD_Project_triggered()

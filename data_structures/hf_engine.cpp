@@ -302,6 +302,33 @@ void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, do
 
 }
 
+void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3& stock, const std::vector<std::pair<int, cg3::Point3d>>& pack)
+{
+	_packing.clear();
+
+	for (cg3::Dcel& b : tmpPacking){
+		b.scale(factor);
+		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+		b.translate(dir);
+	}
+
+	_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
+	uint j = 0;
+	for (const std::pair<int, cg3::Point3d>& p : pack){
+		bool rotated = false;
+		if (p.first < 0)
+			rotated = true;
+
+		_packing[0][j] = tmpPacking[std::abs(p.first)-1];
+		if (rotated) {
+			_packing[0][j].rotate(cg3::Z_AXIS, M_PI/2);
+			_packing[0][j].translate(stock.min() - _packing[0][j].boundingBox().min());
+		}
+		_packing[0][j].translate(p.second - stock.min());
+		j++;
+	}
+}
+
 void HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool)
 {
 	auto tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool);
@@ -327,33 +354,6 @@ void HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &
 	if (factor > 0){
 		_packing.clear();
 		setOneStockPacking(tmpPacking, factor, stock, packs[0]);
-	}
-}
-
-void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3& stock, const std::vector<std::pair<int, cg3::Point3d>>& pack)
-{
-	_packing.clear();
-
-	for (cg3::Dcel& b : tmpPacking){
-		b.scale(factor);
-		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
-		b.translate(dir);
-	}
-
-	_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
-	uint j = 0;
-	for (const std::pair<int, cg3::Point3d>& p : pack){
-		bool rotated = false;
-		if (p.first < 0)
-			rotated = true;
-
-		_packing[0][j] = tmpPacking[std::abs(p.first)-1];
-		if (rotated) {
-			_packing[0][j].rotate(cg3::Z_AXIS, M_PI/2);
-			_packing[0][j].translate(stock.min() - _packing[0][j].boundingBox().min());
-		}
-		_packing[0][j].translate(p.second - stock.min());
-		j++;
 	}
 }
 

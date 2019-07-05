@@ -33,6 +33,16 @@ HFGui::HFGui(QWidget *parent) :
 {
     ui->setupUi(this);
 
+	tabs[0] = ui->preProcessingFrame;
+	tabLabels[0] = ui->preProcessingLabel;
+	tabs[1] = ui->decompositionFrame;
+	tabLabels[1] = ui->decompositionLabel;
+	tabs[2] = ui->postProcessingFrame;
+	tabLabels[2] = ui->postProcessingLabel;
+	tabs[3] = ui->packingFrame;
+	tabLabels[3] = ui->packingLabel;
+	ui->testFrame->setVisible(false);
+
 	QPixmap pixmap(":/green.ico");
 	ui->circLabel->setPixmap(pixmap);
 
@@ -104,6 +114,11 @@ HFGui::HFGui(QWidget *parent) :
 			this, SLOT(packInOneStockCompleted(bool, double, std::vector<std::pair<int, cg3::Point3d>>)));
 
 	workerThread.start();
+
+	for (uint i = 0; i < NTABS; i++){
+		tabs[i]->setVisible(false);
+		tabLabels[i]->setEnabled(false);
+	}
 }
 
 HFGui::~HFGui()
@@ -134,14 +149,8 @@ bool HFGui::loadMesh()
 			mw.canvas.fitScene();
 			mw.canvas.update();
 
-			ui->tabWidget->setEnabled(true);
-			ui->tabWidget->setTabEnabled(0, true);
-			ui->tabWidget->setTabEnabled(1, false);
-			ui->tabWidget->setTabEnabled(2, false);
-			ui->tabWidget->setTabEnabled(3, false);
-			ui->tabWidget->setTabEnabled(4, false);
-			ui->testFrame->setEnabled(true);
-			actualTab = 0;
+			changeTab(0);
+			ui->testFrame->setVisible(true);
 			guides.setBoundingBox(mesh.boundingBox());
 			return true;
 		}
@@ -162,6 +171,16 @@ bool HFGui::loadHFD(std::string& filename)
 			cg3::deserialize(v, myfile);
 			cg3::deserializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
 										   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
+			if (v < 2){
+				if (actualTab > 0)
+					actualTab--;
+			}
+			else {
+				int lightAngle, flipAngle;
+				cg3::deserializeObjectAttributes("angles", myfile, lightAngle, flipAngle);
+				ui->lightToleranceSpinBox->setValue(lightAngle);
+				ui->flipAngleSpinBox->setValue(flipAngle);
+			}
 			myfile.close();
 			afterLoadHFD();
 			filename = tmp;
@@ -181,12 +200,6 @@ void HFGui::afterLoadHFD()
 			d.update();
 		}
 	}
-	ui->tabWidget->setEnabled(true);
-	ui->tabWidget->setTabEnabled(0, false);
-	ui->tabWidget->setTabEnabled(1, false);
-	ui->tabWidget->setTabEnabled(2, false);
-	ui->tabWidget->setTabEnabled(3, false);
-	ui->tabWidget->setTabEnabled(4, false);
 	ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 	colorTestMesh();
 	changeTab(actualTab);
@@ -200,14 +213,11 @@ void HFGui::afterLoadHFD()
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 	}
 	updateSurfaceAndvolume();
-	if (actualTab == 1 || actualTab == 2){
+	if (actualTab == 1){
 		box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 		mw.pushDrawableObject(&box, "box");
-		if (actualTab == 2){
-			box.setDrawArrow(true);
-		}
 	}
-	if (actualTab == 3){
+	if (actualTab == 2){
 		if (hfEngine.decomposition().size() > 0){
 			mw.setDrawableObjectVisibility(&mesh, false);
 			mw.setDrawableObjectVisibility(&originalMesh, false);
@@ -226,7 +236,7 @@ void HFGui::afterLoadHFD()
 			ui->hausdorffDistanceLabel->setEnabled(true);
 		}
 	}
-	if (actualTab == 4){
+	if (actualTab == 3){
 		mw.pushDrawableObject(&hfDecomposition, "Decomposition", false);
 		mw.setDrawableObjectVisibility(&mesh, false);
 		ui->xStockSpinBox->setValue(stock.maxX());
@@ -274,6 +284,8 @@ bool HFGui::saveHFDAs(std::string& filename)
 			cg3::serialize(version, myfile);
 			cg3::serializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
 										   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
+			int lightAngle = ui->lightToleranceSpinBox->value(), flipAngle = ui->flipAngleSpinBox->value();
+			cg3::serializeObjectAttributes("angles", myfile, lightAngle, flipAngle);
 			myfile.close();
 			filename = tmp;
 			return true;
@@ -290,6 +302,8 @@ bool HFGui::saveHFD(const string &filename)
 		cg3::serialize(version, myfile);
 		cg3::serializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
 									   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
+		int lightAngle = ui->lightToleranceSpinBox->value(), flipAngle = ui->flipAngleSpinBox->value();
+		cg3::serializeObjectAttributes("angles", myfile, lightAngle, flipAngle);
 		myfile.close();
 		return true;
 	}
@@ -354,9 +368,10 @@ void HFGui::clear()
 	guides.clear();
 	packing.clear();
 
-	ui->tabWidget->setCurrentIndex(0);
-	ui->tabWidget->setEnabled(false);
-	ui->testFrame->setEnabled(false);
+	for (uint i = 0; i < NTABS; i++){
+		tabs[i]->setVisible(false);
+		tabLabels[i]->setEnabled(false);
+	}
 }
 
 void HFGui::addAction(const UserAction &action)
@@ -388,24 +403,28 @@ void HFGui::updateSurfaceAndvolume()
 
 void HFGui::changeTab(uint tab)
 {
-	ui->tabWidget->setTabEnabled(actualTab, false);
-	ui->tabWidget->setTabEnabled(tab, true);
-	ui->tabWidget->setCurrentIndex(tab);
+	for (uint i = 0; i < NTABS; i++){
+		if (i != tab){
+			tabs[i]->setVisible(false);
+			tabLabels[i]->setEnabled(false);
+		}
+	}
+	tabs[tab]->setVisible(true);
+	tabLabels[tab]->setEnabled(true);
 	actualTab = tab;
 	if (tab >= 2){
 		ui->testOrTrianglesCheckBox->setChecked(false);
-		ui->testFrame->setEnabled(false);
+		ui->testFrame->setVisible(false);
 	}
 	else {
-		ui->testFrame->setEnabled(true);
+		ui->testFrame->setVisible(true);
 	}
 }
 
 void HFGui::startWork()
 {
-	ui->mainFrame->setEnabled(false);
-	ui->tabWidget->setEnabled(false);
-	ui->testFrame->setEnabled(false);
+	tabs[actualTab]->setEnabled(false);
+	ui->testFrame->setVisible(false);
 	ui->progressBar->setValue(0);
 	QMovie *movie = new QMovie(":/wait.gif");
 	ui->circLabel->setMovie(movie);
@@ -414,10 +433,9 @@ void HFGui::startWork()
 
 void HFGui::endWork()
 {
-	ui->mainFrame->setEnabled(true);
-	ui->tabWidget->setEnabled(true);
-	if (actualTab < 2)
-		ui->testFrame->setEnabled(true);
+	tabs[actualTab]->setEnabled(true);
+	if (actualTab == 0)
+		ui->testFrame->setVisible(true);
 	ui->progressBar->setValue(100);
 	ui->circLabel->setMovie(nullptr);
 	QPixmap pixmap(":/green.ico");
@@ -472,7 +490,7 @@ void HFGui::colorTestMesh()
 
 void HFGui::undo()
 {
-	if (actualAction != 0 && actualTab <= 3){
+	if (actualAction != 0 && actualTab <= 2){
 		actualAction--;
 		bool b;
 		switch(actions[actualAction].type()){
@@ -508,10 +526,6 @@ void HFGui::undo()
 			changeTab(actions[actualAction].tab());
 			guides.popGuide();
 			guides.popGuide();
-			if (remainingVolume == totalVolume){
-				ui->flipAngleSpinBox->setEnabled(true);
-				ui->lightToleranceSpinBox->setEnabled(true);
-			}
 			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 			break;
 		case UserAction::RESTORE_HIGH_FREQ :
@@ -537,7 +551,7 @@ void HFGui::undo()
 
 void HFGui::redo()
 {
-	if (actualAction < actions.size() && actualTab <= 3){
+	if (actualAction < actions.size() && actualTab <= 2){
 		Eigen::Matrix3d rot;
 		bool v;
 		cg3::SimpleEigenMesh b;
@@ -566,7 +580,7 @@ void HFGui::redo()
 			rot = actions[actualAction].rotationMatrix();
 			actualRotationMatrix *= rot;
 			mesh.rotate(rot);
-			changeTab(1);
+			changeTab(0);
 			colorTestMesh();
 			break;
 		case UserAction::CUT :
@@ -578,18 +592,16 @@ void HFGui::redo()
 			hfEngine.pushBox(actions[actualAction].box());
 			mw.setDrawableObjectVisibility(&mesh, v);
 			updateSurfaceAndvolume();
-			changeTab(2);
+			changeTab(1);
 			guides.pushGuide(box.min());
 			guides.pushGuide(box.max());
-			ui->flipAngleSpinBox->setEnabled(false);
-			ui->lightToleranceSpinBox->setEnabled(false);
 			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
 			break;
 		case UserAction::RESTORE_HIGH_FREQ:
 			mesh = actions[actualAction].restoredMesh();
 			ui->nRestoreIterationsSpinBox->setValue(actions[actualAction].nIterations());
 			hfEngine.setMesh(mesh);
-			changeTab(3);
+			changeTab(2);
 			break;
 		case UserAction::DECOMPOSITION:
 			i = 0;
@@ -605,7 +617,7 @@ void HFGui::redo()
 			mw.canvas.update();
 			ui->nextPostProcessingPushButton->setEnabled(true);
 			mw.setSaveDecompositionButtons(true);
-			changeTab(3);
+			changeTab(2);
 			break;
 		}
 		mesh.update();
@@ -657,11 +669,38 @@ void HFGui::taubinSmoothingCompleted(cg3::Dcel m)
 	endWork();
 }
 
-void HFGui::on_smoothingNextPushButton_clicked()
+void HFGui::on_preProcessingNextPushButton_clicked()
 {
-	box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
-	mw.pushDrawableObject(&box, "box");
+	//box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
+	//mw.pushDrawableObject(&box, "box");
+	if (ui->manualOrientationRadioButton->isChecked()){
+		QMessageBox* box = new QMessageBox(&mw);
+		box->setWindowTitle("Rotation Mode");
+		box->setText("You are in manual rotation mode.\n"
+					 "Do you want to keep the actual rotation?");
+		box->addButton(QMessageBox::Ok);
+		box->button(QMessageBox::Ok)->setText("Keep Rotation");
+		box->addButton(QMessageBox::Cancel);
+		box->button(QMessageBox::Cancel)->setText("Discard Rotation");
+		box->setEscapeButton(QMessageBox::Cancel);
+		box->setDefaultButton(QMessageBox::Ok);
+		int ret = box->exec();
+		if (ret == QMessageBox::Ok){
+			Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
+			addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
+			actualRotationMatrix *= rot;
+			mesh.rotate(rot);
+			treeMesh = cg3::cgal::AABBTree3(mesh);
+			ui->automaticOrientationRadioButton->toggle();
+		}
+	}
+	mw.setDrawableObjectVisibility(&mesh, true);
+	mw.deleteDrawableObject(&rotatableMesh);
 	changeTab(1);
+	colorTestMesh();
+	guides.setBoundingBox(mesh.boundingBox());
+	box.setDrawArrow(true);
+	mw.canvas.update();
 	totalVolume = mesh.volume();
 	totalSurface = mesh.surfaceArea();
 	remainingVolume = totalVolume;
@@ -676,6 +715,7 @@ void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
 		ui->nDirsSpinBox->setEnabled(true);
 		ui->resetRotationPushButton->setEnabled(false);
 		ui->manualOrientationDonePushButton->setEnabled(false);
+		ui->taubinSmoothingPushButton->setEnabled(true);
 
 		mw.setDrawableObjectVisibility(&mesh, true);
 		mw.deleteDrawableObject(&rotatableMesh);
@@ -690,6 +730,7 @@ void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
 		ui->nDirsSpinBox->setEnabled(false);
 		ui->resetRotationPushButton->setEnabled(true);
 		ui->manualOrientationDonePushButton->setEnabled(true);
+		ui->taubinSmoothingPushButton->setEnabled(false);
 
 		mw.setDrawableObjectVisibility(&mesh, false);
 		rotatableMesh.setMesh(mesh);
@@ -732,43 +773,6 @@ void HFGui::on_manualOrientationDonePushButton_clicked()
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mw.canvas.update();
 	ui->automaticOrientationRadioButton->toggle();
-}
-
-void HFGui::on_orientationNextPushButton_clicked()
-{
-	if (ui->manualOrientationRadioButton->isChecked()){
-		QMessageBox* box = new QMessageBox(&mw);
-		box->setWindowTitle("Rotation Mode");
-		box->setText("You are in manual rotation mode.\n"
-					 "Do you want to keep the actual rotation?");
-		box->addButton(QMessageBox::Ok);
-		box->button(QMessageBox::Ok)->setText("Keep Rotation");
-		box->addButton(QMessageBox::Cancel);
-		box->button(QMessageBox::Cancel)->setText("Discard Rotation");
-		box->setEscapeButton(QMessageBox::Cancel);
-		box->setDefaultButton(QMessageBox::Ok);
-		int ret = box->exec();
-		if (ret == QMessageBox::Ok){
-			Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
-			addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
-			actualRotationMatrix *= rot;
-			mesh.rotate(rot);
-			treeMesh = cg3::cgal::AABBTree3(mesh);
-			ui->automaticOrientationRadioButton->toggle();
-		}
-	}
-	finishRotation();
-}
-
-void HFGui::finishRotation()
-{
-	mw.setDrawableObjectVisibility(&mesh, true);
-	mw.deleteDrawableObject(&rotatableMesh);
-	changeTab(2);
-	colorTestMesh();
-	guides.setBoundingBox(mesh.boundingBox());
-	box.setDrawArrow(true);
-	mw.canvas.update();
 }
 
 void HFGui::on_pxRadioButton_toggled(bool checked)
@@ -892,9 +896,6 @@ void HFGui::on_cutPushButton_clicked()
 void HFGui::startCut()
 {
 	startWork();
-
-	ui->flipAngleSpinBox->setEnabled(false);
-	ui->lightToleranceSpinBox->setEnabled(false);
 	guides.pushGuide(box.min());
 	guides.pushGuide(box.max());
 
@@ -1001,7 +1002,7 @@ void HFGui::on_decompositionNextPushButton_clicked()
 
 void HFGui::finishDecomposition()
 {
-	changeTab(3);
+	changeTab(2);
 
 	if (mw.containsDrawableObject(&originalMesh)){
 		ui->restoreHighFrequenciesPushButton->setEnabled(true);
@@ -1072,7 +1073,7 @@ void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)
 
 void HFGui::on_nextPostProcessingPushButton_clicked()
 {
-	changeTab(4);
+	changeTab(3);
 	ui->clearPackingPushButton->setEnabled(false);
 	mw.setDrawableObjectVisibility(&hfDecomposition, false);
 	stock.setMin(cg3::Point3d(0, 0, 0));
@@ -1128,6 +1129,7 @@ void HFGui::on_packPushButton_clicked()
 	ui->clearPackingPushButton->setEnabled(true);
 	mw.setSavePackingButtons(true);
 	mw.canvas.update();
+	mw.setSaved(false);
 }
 
 void HFGui::on_packOneStockButton_clicked()
@@ -1158,6 +1160,7 @@ void HFGui::packInOneStockCompleted(bool success, double factor, std::vector<std
 		ui->clearPackingPushButton->setEnabled(true);
 		mw.canvas.update();
 		mw.setSavePackingButtons(true);
+		mw.setSaved(false);
 	}
 	else {
 		QMessageBox* box = new QMessageBox(&mw);

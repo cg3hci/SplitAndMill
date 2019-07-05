@@ -73,8 +73,6 @@ private slots:
 	void on_taubinSmoothingPushButton_clicked();
 	void taubinSmoothingCompleted(cg3::Dcel m);
 
-	void on_smoothingNextPushButton_clicked();
-
 	//orientation
 	void on_automaticOrientationRadioButton_toggled(bool checked);
 
@@ -87,8 +85,7 @@ private slots:
 
 	void on_manualOrientationDonePushButton_clicked();
 
-	void on_orientationNextPushButton_clicked();
-	void finishRotation();
+	void on_preProcessingNextPushButton_clicked();
 
 	//box
 	void on_pxRadioButton_toggled(bool checked);
@@ -174,6 +171,9 @@ private slots:
 
 private:
 	Ui::HFGui *ui;
+	static const uint NTABS = 4;
+	QFrame* tabs[NTABS];
+	QLabel* tabLabels[NTABS];
 	QThread workerThread;
 
     //reference to the MainWindow
@@ -202,7 +202,7 @@ private:
 	uint actualAction;
 
 	std::vector<cg3::Dcel> tmpPacking;
-	const uint version = 1;
+	const uint version = 2;
 
 };
 
