@@ -180,6 +180,10 @@ private slots:
 	void on_savePackingToolButton_clicked();
 	void on_showAxisToolButton_toggled(bool b);
 
+	// QWidget interface
+protected:
+	void closeEvent(QCloseEvent *event);
+
 private:
 
     struct ContainerProperties {

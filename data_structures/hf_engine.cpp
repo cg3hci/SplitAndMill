@@ -302,6 +302,34 @@ void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, do
 
 }
 
+void HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool)
+{
+	auto tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool);
+
+	double factor = 1;
+	double step = factor / 200;
+	std::vector< std::vector<std::pair<int, cg3::Point3d> > > packs;
+	do {
+		std::vector<cg3::Dcel> bl = tmpPacking;
+		if (factor != 1){
+			for (cg3::Dcel& b : bl){
+				b.scale(factor);
+				cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+				b.translate(dir);
+			}
+		}
+
+		packs = packing::packing(bl, stock, distangeBetweenblocks);
+
+		factor-= step;
+	} while(factor > 0 && packs.size() > 1);
+
+	if (factor > 0){
+		_packing.clear();
+		setOneStockPacking(tmpPacking, factor, stock, packs[0]);
+	}
+}
+
 void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3& stock, const std::vector<std::pair<int, cg3::Point3d>>& pack)
 {
 	_packing.clear();

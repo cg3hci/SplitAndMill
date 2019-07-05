@@ -23,6 +23,8 @@ HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
 	mw((HFMainWindow&)*parent),
+	lsmesh(&mw),
+	lshfd(&mw),
 	actualRotationMatrix(Eigen::Matrix3d::Identity()),
 	actualTab(0),
 	rotatableMesh(mw.canvas),

@@ -35,6 +35,7 @@ public:
 	std::vector<cg3::Dcel> packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor = 1);
 	void comutePackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1, double factor = 1);
 	void setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3 &stock, const std::vector<std::pair<int, cg3::Point3d> > &pack);
+	void computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1);
 
 	std::vector<std::vector<cg3::Dcel> > packing() const;
 	std::vector<std::vector<cg3::Dcel> >& packing();

@@ -51,6 +51,7 @@ HFMainWindow::HFMainWindow(QWidget* parent) :
 		AbstractMainWindow(parent),
         ui(new internal::UiMainWindowRaiiWrapper(this)),
 		hfFrame(nullptr),
+		saved(true),
 		canvas(*ui->glCanvas)
 {
     scrollAreaLayout = new QVBoxLayout(ui->scrollArea);
@@ -75,7 +76,7 @@ HFMainWindow::HFMainWindow(QWidget* parent) :
 	ui->actionSave_Decomposition->setEnabled(false);
 	ui->actionSave_Packing->setEnabled(false);
 
-	setWindowTitle("Height-Field Decomposition - Unknown Project");
+	setWindowTitle("Height-Field Decomposition - Untilted Project");
 }
 
 HFMainWindow::~HFMainWindow()
@@ -116,12 +117,13 @@ void HFMainWindow::setSavePackingButtons(bool b)
 void HFMainWindow::setSaved(bool b)
 {
 	saved = b;
+	std::string pname;
+	if (fileHFD != "") pname = cg3::filenameWithoutExtension(fileHFD);
+	else pname = "Untilted Project";
 	if (saved) {
-		std::string pname = cg3::filenameWithoutExtension(fileHFD);
 		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname));
 	}
 	else {
-		std::string pname = cg3::filenameWithoutExtension(fileHFD);
 		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname) + "*");
 	}
 }
@@ -542,4 +544,39 @@ void HFMainWindow::on_showAxisToolButton_toggled(bool b)
 {
 	if (b != ui->glCanvas->axisIsDrawn())
 		ui->actionShow_Axis->trigger();
+}
+
+void HFMainWindow::closeEvent(QCloseEvent *event)
+{
+	if (!saved){
+		std::string pname;
+		if (pname != "") pname = cg3::filenameWithoutExtension(fileHFD);
+		else pname = "Untilted Project";
+		QMessageBox* box = new QMessageBox(this);
+		box->setWindowTitle("");
+		box->setText("Save changes to " + QString::fromStdString(pname) + " before closing?");
+		box->addButton(QMessageBox::No);
+		box->button(QMessageBox::No)->setText("Close Without Saving");
+
+		box->addButton(QMessageBox::Ok);
+		box->button(QMessageBox::Ok)->setText("Save");
+
+		box->addButton(QMessageBox::Cancel);
+		box->button(QMessageBox::Cancel)->setText("Cancel");
+		box->setEscapeButton(QMessageBox::Cancel);
+		box->setDefaultButton(QMessageBox::Ok);
+		int ret = box->exec();
+		if (ret == QMessageBox::Cancel)
+			event->ignore();
+		else if (ret == QMessageBox::Ok){
+			ui->actionSave_HFD_Project->trigger();
+			if (!saved)
+				event->ignore();
+		}
+		else {
+			QMainWindow::closeEvent(event);
+		}
+	}
+	if (saved)
+		QMainWindow::closeEvent(event);
 }

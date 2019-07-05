@@ -158,7 +158,7 @@
           <x>0</x>
           <y>0</y>
           <width>250</width>
-          <height>448</height>
+          <height>427</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2"/>
@@ -177,8 +177,8 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>399</width>
-     <height>50</height>
+     <width>483</width>
+     <height>113</height>
     </size>
    </property>
    <property name="features">
@@ -194,6 +194,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QToolButton" name="loadToolButton">
+       <property name="toolTip">
+        <string>Load Mesh</string>
+       </property>
        <property name="text">
         <string>Load Mesh</string>
        </property>
@@ -211,6 +214,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="loadHFDToolButton">
+       <property name="toolTip">
+        <string>Load HFD Project</string>
+       </property>
        <property name="text">
         <string>Load HFD Project</string>
        </property>
@@ -228,6 +234,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="saveHFDToolButton">
+       <property name="toolTip">
+        <string>Save HFD Project</string>
+       </property>
        <property name="text">
         <string>Save HFD Project</string>
        </property>
@@ -245,6 +254,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="saveDecompositionToolButton">
+       <property name="toolTip">
+        <string>Save Decomposition Meshes</string>
+       </property>
        <property name="text">
         <string>Save Decomposition</string>
        </property>
@@ -262,6 +274,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="savePackingToolButton">
+       <property name="toolTip">
+        <string>Save Packing Meshes</string>
+       </property>
        <property name="text">
         <string>save Packing</string>
        </property>
@@ -286,6 +301,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="showAxisToolButton">
+       <property name="toolTip">
+        <string>Show Axis</string>
+       </property>
        <property name="text">
         <string>Show Axis</string>
        </property>
