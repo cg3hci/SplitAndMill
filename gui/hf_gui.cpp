@@ -27,6 +27,7 @@ HFGui::HFGui(QWidget *parent) :
 	lshfd(&mw),
 	actualRotationMatrix(Eigen::Matrix3d::Identity()),
 	actualTab(0),
+	hfEngine(new HFEngineThread()),
 	rotatableMesh(mw.canvas),
 	box(mw.canvas),
 	actualAction(0)
@@ -59,59 +60,56 @@ HFGui::HFGui(QWidget *parent) :
 	connect(&mw, SIGNAL(redoEvent()),
 			this, SLOT(redo()));
 
-	ThreadWorker* tw = new ThreadWorker;
-	tw->moveToThread(&workerThread);
-	connect(&workerThread, SIGNAL(finished()), tw, SLOT(deleteLater()));
+	hfEngine->moveToThread(&workerThread);
+	connect(&workerThread, SIGNAL(finished()), hfEngine, SLOT(deleteLater()));
 
 	qRegisterMetaType<cg3::Dcel>("cg3::Dcel");
 	qRegisterMetaType<Eigen::Matrix3d>("Eigen::Matrix3d");
 	qRegisterMetaType<HFBox>("HFBox");
-	qRegisterMetaType<HFEngine*>("HFEngine*");
-	qRegisterMetaType<std::vector<cg3::Dcel>>("std::vector<cg3::Dcel>");
 	qRegisterMetaType<cg3::BoundingBox3>("cg3::BoundingBox3");
-	qRegisterMetaType<std::vector<std::pair<int, cg3::Point3d>>>("std::vector<std::pair<int, cg3::Point3d>>");
+	qRegisterMetaType<cg3::BoundingBox3>("cg3::Point2d");
 
-	connect(tw, SIGNAL(setProgressBarValue(uint)),
+	connect(hfEngine, SIGNAL(setProgressBarValue(uint)),
 			this, SLOT(setProgressBarValue(uint)));
 
-	connect(this, SIGNAL(taubinSmoothing(cg3::Dcel, uint, double, double)),
-	        tw, SLOT(taubinSmoothing(cg3::Dcel, uint, double, double)));
+	connect(this, SIGNAL(taubinSmoothing(uint, double, double)),
+			hfEngine, SLOT(taubinSmoothing(uint, double, double)));
 
-	connect(tw, SIGNAL(taubinSmoothingCompleted(cg3::Dcel)),
-	        this, SLOT(taubinSmoothingCompleted(cg3::Dcel)));
+	connect(hfEngine, SIGNAL(taubinSmoothingCompleted()),
+			this, SLOT(taubinSmoothingCompleted()));
 
-	connect(this, SIGNAL(optimalOrientation(cg3::Dcel, uint)),
-			tw, SLOT(optimalOrientation(cg3::Dcel, uint)));
+	connect(this, SIGNAL(optimalOrientation(uint)),
+			hfEngine, SLOT(optimalOrientation(uint)));
 
-	connect(tw, SIGNAL(optimalOrientationCompleted(Eigen::Matrix3d)),
+	connect(hfEngine, SIGNAL(optimalOrientationCompleted(Eigen::Matrix3d)),
 			this, SLOT(optimalOrientationCompleted(Eigen::Matrix3d)));
 
 	connect(this, SIGNAL(cut(cg3::Dcel, HFBox)),
-			tw, SLOT(cut(cg3::Dcel, HFBox)));
+			hfEngine, SLOT(cut(cg3::Dcel, HFBox)));
 
-	connect(tw, SIGNAL(cutCompleted(cg3::Dcel)),
+	connect(hfEngine, SIGNAL(cutCompleted(cg3::Dcel)),
 			this, SLOT(cutCompleted(cg3::Dcel)));
 
-	connect(this, SIGNAL(restoreHighFrequencies(HFEngine*, uint, double)),
-			tw, SLOT(restoreHighFrequencies(HFEngine*, uint, double)));
+	connect(this, SIGNAL(restoreHighFrequencies(uint, double)),
+			hfEngine, SLOT(restoreHighFrequencies(uint, double)));
 
-	connect(tw, SIGNAL(restoreHighFrequenciesCompleted()),
+	connect(hfEngine, SIGNAL(restoreHighFrequenciesCompleted()),
 			this, SLOT(restoreHighFrequenciesCompleted()));
 
-	connect(this, SIGNAL(computeDecomposition(HFEngine*)),
-			tw, SLOT(computeDecomposition(HFEngine*)));
+	connect(this, SIGNAL(computeDecomposition()),
+			hfEngine, SLOT(computeDecomposition()));
 
-	connect(this, SIGNAL(computeDecompositionExact(HFEngine*)),
-			tw, SLOT(computeDecompositionExact(HFEngine*)));
+	connect(this, SIGNAL(computeDecompositionExact()),
+			hfEngine, SLOT(computeDecompositionExact()));
 
-	connect(tw, SIGNAL(computeDecompositionCompleted(std::vector<cg3::Dcel>)),
-			this, SLOT(computeDecompositionCompleted(std::vector<cg3::Dcel>)));
+	connect(hfEngine, SIGNAL(computeDecompositionCompleted()),
+			this, SLOT(computeDecompositionCompleted()));
 
-	connect(this, SIGNAL(packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double)),
-			tw, SLOT(packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double)));
+	connect(this, SIGNAL(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)),
+			hfEngine, SLOT(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)));
 
-	connect(tw, SIGNAL(packInOneStockCompleted(bool, double, std::vector<std::pair<int, cg3::Point3d>>)),
-			this, SLOT(packInOneStockCompleted(bool, double, std::vector<std::pair<int, cg3::Point3d>>)));
+	connect(hfEngine, SIGNAL(computeOneStockPackingFromDecompositionCompleted(bool)),
+			this, SLOT(computeOneStockPackingFromDecompositionCompleted(bool)));
 
 	workerThread.start();
 
@@ -144,7 +142,7 @@ bool HFGui::loadMesh()
 
 			mw.pushDrawableObject(&mesh, "Loaded Mesh");
 			treeMesh = cg3::cgal::AABBTree3(mesh);
-			hfEngine.setMesh(mesh);
+			hfEngine->setMesh(mesh);
 
 			mw.canvas.fitScene();
 			mw.canvas.update();
@@ -200,14 +198,14 @@ void HFGui::afterLoadHFD()
 			d.update();
 		}
 	}
-	ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
+	ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
 	colorTestMesh();
 	changeTab(actualTab);
 	mw.pushDrawableObject(&mesh, "Loaded Mesh");
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mesh.update();
-	if (hfEngine.usesSmoothedMesh()){
-		originalMesh = hfEngine.originalMesh();
+	if (hfEngine->usesSmoothedMesh()){
+		originalMesh = hfEngine->originalMesh();
 		originalMesh.update();
 		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
@@ -218,17 +216,17 @@ void HFGui::afterLoadHFD()
 		mw.pushDrawableObject(&box, "box");
 	}
 	if (actualTab == 2){
-		if (hfEngine.decomposition().size() > 0){
+		if (hfEngine->decomposition().size() > 0){
 			mw.setDrawableObjectVisibility(&mesh, false);
 			mw.setDrawableObjectVisibility(&originalMesh, false);
 			hfDecomposition.clear();
 			uint i = 0;
-			for (const cg3::Dcel& d : hfEngine.decomposition())
+			for (const cg3::Dcel& d : hfEngine->decomposition())
 				hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
 			mw.pushDrawableObject(&hfDecomposition, "Decomposition");
 			ui->nextPostProcessingPushButton->setEnabled(true);
 		}
-		if (hfEngine.usesSmoothedMesh()) {
+		if (hfEngine->usesSmoothedMesh()) {
 			ui->restoreHighFrequenciesPushButton->setEnabled(true);
 			ui->nRestoreIterationsSpinBox->setEnabled(true);
 			ui->nRestoreIterationsLabel->setEnabled(true);
@@ -243,10 +241,10 @@ void HFGui::afterLoadHFD()
 		ui->yStockSpinBox->setValue(stock.maxY());
 		ui->zStockSpinBox->setValue(stock.maxZ());
 		mw.pushDrawableObject(&stock, "Stock");
-		if (hfEngine.packing().size() > 0){
+		if (hfEngine->packing().size() > 0){
 			packing.clear();
 			uint i = 0;
-			for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
+			for (const std::vector<cg3::Dcel>& stock : hfEngine->packing()){
 				bool vis = i == 0;
 				packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
 				uint j = 0;
@@ -264,7 +262,7 @@ void HFGui::afterLoadHFD()
 		}
 	}
 
-	for (const HFBox& b: hfEngine.boxes()){
+	for (const HFBox& b: hfEngine->boxes()){
 		guides.pushGuide(b.min());
 		guides.pushGuide(b.max());
 	}
@@ -361,7 +359,7 @@ void HFGui::clear()
 	mw.deleteDrawableObject(&stock);
 	mw.deleteDrawableObject(&packing);
 	hfDecomposition.clear();
-	hfEngine.clear();
+	hfEngine->clear();
 	actions.clear();
 	actualAction = 0;
 	mw.canvas.update();
@@ -496,9 +494,9 @@ void HFGui::undo()
 		switch(actions[actualAction].type()){
 		case UserAction::SMOOTHING :
 			mesh = actions[actualAction].mesh();
-			hfEngine.setMesh(mesh);
+			hfEngine->setMesh(mesh);
 			if (actions[actualAction].firstSmoothing()){
-				hfEngine.setUseSmoothedMesh(false);
+				hfEngine->setUseSmoothedMesh(false);
 				mw.deleteDrawableObject(&originalMesh);
 				mw.setDrawableObjectName(&mesh, "Loaded Mesh");
 			}
@@ -518,7 +516,7 @@ void HFGui::undo()
 			mesh = actions[actualAction].mesh();
 			box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
 			box.setMillingDirection(actions[actualAction].box().millingDirection());
-			hfEngine.popBox();
+			hfEngine->popBox();
 			mw.setDrawableObjectVisibility(&mesh, b);
 			mw.pushDrawableObject(&box, "Box");
 			mw.deleteDrawableObject(&hfDecomposition);
@@ -526,7 +524,7 @@ void HFGui::undo()
 			changeTab(actions[actualAction].tab());
 			guides.popGuide();
 			guides.popGuide();
-			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
+			ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
 			break;
 		case UserAction::RESTORE_HIGH_FREQ :
 			mesh = actions[actualAction].mesh();
@@ -560,21 +558,21 @@ void HFGui::redo()
 		case UserAction::SMOOTHING :
 			if (actions[actualAction].firstSmoothing()){
 				originalMesh = actions[actualAction].mesh();
-				hfEngine.setOriginalMesh(originalMesh);
+				hfEngine->setOriginalMesh(originalMesh);
 				originalMesh.update();
 				mw.refreshDrawableObject(&originalMesh);
 				mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
 				mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 			}
 			//mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
-			hfEngine.setMesh(mesh);
+			hfEngine->setMesh(mesh);
 			totalVolume = mesh.volume();
 			totalSurface = mesh.surfaceArea();
 			remainingVolume = totalVolume;
 			remainingSurface = totalSurface;
 			changeTab(0);
 			colorTestMesh();
-			emit taubinSmoothing(mesh, actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
+			emit taubinSmoothing(actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
 			break;
 		case UserAction::ROTATE :
 			rot = actions[actualAction].rotationMatrix();
@@ -589,26 +587,26 @@ void HFGui::redo()
 			b = cg3::EigenMeshAlgorithms::makeBox(box.min(), box.max());
 			mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
 			box.setMillingDirection(actions[actualAction].box().millingDirection());
-			hfEngine.pushBox(actions[actualAction].box());
+			hfEngine->pushBox(actions[actualAction].box());
 			mw.setDrawableObjectVisibility(&mesh, v);
 			updateSurfaceAndvolume();
 			changeTab(1);
 			guides.pushGuide(box.min());
 			guides.pushGuide(box.max());
-			ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
+			ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
 			break;
 		case UserAction::RESTORE_HIGH_FREQ:
 			mesh = actions[actualAction].restoredMesh();
 			ui->nRestoreIterationsSpinBox->setValue(actions[actualAction].nIterations());
-			hfEngine.setMesh(mesh);
+			hfEngine->setMesh(mesh);
 			changeTab(2);
 			break;
 		case UserAction::DECOMPOSITION:
 			i = 0;
 			hfDecomposition.clear();
-			hfEngine.decomposition() = actions[actualAction].decomposition();
-			hfEngine.colorDecomposition();
-			for (const cg3::Dcel& d : hfEngine.decomposition())
+			hfEngine->decomposition() = actions[actualAction].decomposition();
+			hfEngine->colorDecomposition();
+			for (const cg3::Dcel& d : hfEngine->decomposition())
 				hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
 
 			mw.setDrawableObjectVisibility(&mesh, false);
@@ -643,23 +641,23 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 	if (!mw.containsDrawableObject(&originalMesh)){
 		originalMesh = mesh;
 		originalMesh.update();
-		hfEngine.setOriginalMesh(originalMesh);
+		hfEngine->setOriginalMesh(originalMesh);
 		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 		firstSmooth = true;
 	}
 	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth, actualTab));
 
-	emit taubinSmoothing(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
+	emit taubinSmoothing(ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
 }
 
-void HFGui::taubinSmoothingCompleted(cg3::Dcel m)
+void HFGui::taubinSmoothingCompleted()
 {
-	mesh = m;
+	mesh = hfEngine->mesh();
 	mesh.setFaceFlags(0);
 	mesh.setFaceColors(cg3::GREY);
 	mesh.update();
-	hfEngine.setMesh(mesh);
+	hfEngine->setMesh(mesh);
 	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 
@@ -669,10 +667,57 @@ void HFGui::taubinSmoothingCompleted(cg3::Dcel m)
 	endWork();
 }
 
-void HFGui::on_preProcessingNextPushButton_clicked()
+void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
 {
-	//box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
-	//mw.pushDrawableObject(&box, "box");
+	bool b = arg1 == Qt::Checked;
+	ui->pxTestRadioButton->setEnabled(b);
+	ui->pyTestRadioButton->setEnabled(b);
+	ui->pzTestRadioButton->setEnabled(b);
+	ui->mxTestRadioButton->setEnabled(b);
+	ui->myTestRadioButton->setEnabled(b);
+	ui->mzTestRadioButton->setEnabled(b);
+	colorTestMesh();
+}
+
+void HFGui::on_pxTestRadioButton_toggled(bool checked)
+{
+	if (checked)
+		colorTestMesh();
+}
+
+void HFGui::on_pyTestRadioButton_toggled(bool checked)
+{
+	if (checked)
+		colorTestMesh();
+}
+
+void HFGui::on_pzTestRadioButton_toggled(bool checked)
+{
+	if (checked)
+		colorTestMesh();
+}
+
+void HFGui::on_mxTestRadioButton_toggled(bool checked)
+{
+	if (checked)
+		colorTestMesh();
+}
+
+void HFGui::on_myTestRadioButton_toggled(bool checked)
+{
+	if (checked)
+		colorTestMesh();
+}
+
+void HFGui::on_mzTestRadioButton_toggled(bool checked)
+{
+	if (checked)
+		colorTestMesh();
+}
+
+
+void HFGui::on_preProcessingNextPushButton_clicked()
+{	
 	if (ui->manualOrientationRadioButton->isChecked()){
 		QMessageBox* box = new QMessageBox(&mw);
 		box->setWindowTitle("Rotation Mode");
@@ -694,6 +739,9 @@ void HFGui::on_preProcessingNextPushButton_clicked()
 			ui->automaticOrientationRadioButton->toggle();
 		}
 	}
+	ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
+	box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
+	mw.pushDrawableObject(&box, "box");
 	mw.setDrawableObjectVisibility(&mesh, true);
 	mw.deleteDrawableObject(&rotatableMesh);
 	changeTab(1);
@@ -742,7 +790,7 @@ void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
 void HFGui::on_optimalOrientationPushButton_clicked()
 {
 	startWork();
-	emit optimalOrientation(mesh, ui->nDirsSpinBox->value());
+	emit optimalOrientation(ui->nDirsSpinBox->value());
 }
 
 void HFGui::optimalOrientationCompleted(Eigen::Matrix3d rot)
@@ -900,10 +948,10 @@ void HFGui::startCut()
 	guides.pushGuide(box.max());
 
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
-	hfEngine.pushBox(hfbox);
+	hfEngine->pushBox(hfbox);
 	addAction(UserAction(mesh, hfbox, actualTab));
 
-	ui->nBoxesLabel->setText(QString::number(hfEngine.boxes().size()));
+	ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
 
 	emit cut(mesh, hfbox);
 }
@@ -1010,12 +1058,12 @@ void HFGui::finishDecomposition()
 		ui->nRestoreIterationsLabel->setEnabled(true);
 		ui->hausDescrLabel->setEnabled(true);
 		ui->hausdorffDistanceLabel->setEnabled(true);
-		originalMesh = hfEngine.originalMesh();
+		originalMesh = hfEngine->originalMesh();
 		mw.refreshDrawableObject(&originalMesh);
 	}
 
 	mw.deleteDrawableObject(&box);
-	mesh = hfEngine.mesh();
+	mesh = hfEngine->mesh();
 	mw.refreshDrawableObject(&mesh);
 	guides.setDrawX(false);
 	guides.setDrawY(false);
@@ -1028,15 +1076,15 @@ void HFGui::on_restoreHighFrequenciesPushButton_clicked()
 {
 	startWork();
 
-	emit restoreHighFrequencies(&hfEngine, ui->nRestoreIterationsSpinBox->value(), std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180)));
+	emit restoreHighFrequencies(ui->nRestoreIterationsSpinBox->value(), std::cos(ui->flipAngleSpinBox->value() * (M_PI / 180)));
 }
 
 void HFGui::restoreHighFrequenciesCompleted()
 {
-	addAction(UserAction(mesh, hfEngine.mesh(), ui->nRestoreIterationsSpinBox->value(), actualTab));
-	mesh = hfEngine.mesh();
+	addAction(UserAction(mesh, hfEngine->mesh(), ui->nRestoreIterationsSpinBox->value(), actualTab));
+	mesh = hfEngine->mesh();
 	mw.refreshDrawableObject(&mesh);
-	ui->hausdorffDistanceLabel->setText(QString::fromStdString(std::to_string(hfEngine.hausdorffDistance())));
+	ui->hausdorffDistanceLabel->setText(QString::fromStdString(std::to_string(hfEngine->hausdorffDistance())));
 	mw.canvas.update();
 
 	endWork();
@@ -1047,19 +1095,17 @@ void HFGui::on_computeDecompositionPushButton_clicked()
 	startWork();
 	mw.deleteDrawableObject(&hfDecomposition);
 	if (ui->exactPredicatesCheckBox->isChecked())
-		emit computeDecompositionExact(&hfEngine);
+		emit computeDecompositionExact();
 	else
-		emit computeDecomposition(&hfEngine);
+		emit computeDecomposition();
 }
 
-void HFGui::computeDecompositionCompleted(std::vector<cg3::Dcel> dec)
+void HFGui::computeDecompositionCompleted()
 {
-	addAction(UserAction(dec, actualTab));
+	addAction(UserAction(hfEngine->decomposition(), actualTab));
 	uint i = 0;
 	hfDecomposition.clear();
-	hfEngine.decomposition() = dec;
-	hfEngine.colorDecomposition();
-	for (const cg3::Dcel& d : hfEngine.decomposition())
+	for (const cg3::Dcel& d : hfEngine->decomposition())
 		hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
 
 	mw.setDrawableObjectVisibility(&mesh, false);
@@ -1111,12 +1157,12 @@ void HFGui::on_clearPackingPushButton_clicked()
 
 void HFGui::on_packPushButton_clicked()
 {
-	hfEngine.comutePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value(),
+	hfEngine->computePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value(),
 											cg3::Point2d(5, 2), 1, ui->sizesFactorSpinBox->value());
 	packing.clear();
 
 	uint i = 0;
-	for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
+	for (const std::vector<cg3::Dcel>& stock : hfEngine->packing()){
 		bool vis = i == 0;
 		packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
 		uint j = 0;
@@ -1135,19 +1181,16 @@ void HFGui::on_packPushButton_clicked()
 void HFGui::on_packOneStockButton_clicked()
 {
 	startWork();
-	packing.clear();
 
-	tmpPacking = hfEngine.packingPreProcessing(stock, ui->toolLengthSpinBox->value(), cg3::Point2d(5, 2), 1);
-	emit packInOneStock(tmpPacking, stock, ui->distBetweenBlocksSpinBox->value());
+	emit computeOneStockPackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5,2), 1);
 }
 
-void HFGui::packInOneStockCompleted(bool success, double factor, std::vector<std::pair<int, cg3::Point3d> > pack)
+void HFGui::computeOneStockPackingFromDecompositionCompleted(bool success)
 {
 	if (success) {
-		hfEngine.setOneStockPacking(tmpPacking, factor, stock, pack);
-
+		packing.clear();
 		uint i = 0;
-		for (const std::vector<cg3::Dcel>& stock : hfEngine.packing()){
+		for (const std::vector<cg3::Dcel>& stock : hfEngine->packing()){
 			bool vis = i == 0;
 			packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
 			uint j = 0;
@@ -1170,52 +1213,4 @@ void HFGui::packInOneStockCompleted(bool success, double factor, std::vector<std
 		box->exec();
 	}
 	endWork();
-}
-
-void HFGui::on_testOrTrianglesCheckBox_stateChanged(int arg1)
-{
-	bool b = arg1 == Qt::Checked;
-	ui->pxTestRadioButton->setEnabled(b);
-	ui->pyTestRadioButton->setEnabled(b);
-	ui->pzTestRadioButton->setEnabled(b);
-	ui->mxTestRadioButton->setEnabled(b);
-	ui->myTestRadioButton->setEnabled(b);
-	ui->mzTestRadioButton->setEnabled(b);
-	colorTestMesh();
-}
-
-void HFGui::on_pxTestRadioButton_toggled(bool checked)
-{
-	if (checked)
-		colorTestMesh();
-}
-
-void HFGui::on_pyTestRadioButton_toggled(bool checked)
-{
-	if (checked)
-		colorTestMesh();
-}
-
-void HFGui::on_pzTestRadioButton_toggled(bool checked)
-{
-	if (checked)
-		colorTestMesh();
-}
-
-void HFGui::on_mxTestRadioButton_toggled(bool checked)
-{
-	if (checked)
-		colorTestMesh();
-}
-
-void HFGui::on_myTestRadioButton_toggled(bool checked)
-{
-	if (checked)
-		colorTestMesh();
-}
-
-void HFGui::on_mzTestRadioButton_toggled(bool checked)
-{
-	if (checked)
-		colorTestMesh();
 }

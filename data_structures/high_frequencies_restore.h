@@ -32,12 +32,24 @@ bool validateMove(
 
 std::vector<cg3::Vec3d> differentialCoordinates(const cg3::Dcel& m);
 
+void restoreHighHrequenciesGaussSeidelSingleIteration(
+		cg3::Dcel &smoothMesh,
+		const std::vector<cg3::Vec3d>& hfDirections,
+		double flipAngle,
+		const std::vector<cg3::Vec3d>& diffCoords);
+
 void restoreHighHrequenciesGaussSeidel(
 		cg3::Dcel& smoothMesh,
 		const cg3::Dcel& detailMesh,
 		const std::vector<cg3::Vec3d>& hfDirections,
 		const int nIters,
 		double flipAngle);
+
+void restoreHighHrequenciesGaussSeidelSingleIteration(
+		cg3::Dcel& smoothMesh,
+		const std::vector<HFBox>& hfBoxes,
+		double flipAngle,
+		const std::vector<cg3::Vec3d> &diffCoords);
 
 void restoreHighHrequenciesGaussSeidel(
 		cg3::Dcel& smoothMesh,

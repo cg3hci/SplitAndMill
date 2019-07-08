@@ -7,9 +7,13 @@
 #include "hf_engine.h"
 
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
+#include <cg3/algorithms/global_optimal_rotation_matrix.h>
+#include <cg3/algorithms/sphere_coverage.h>
 #include <cg3/libigl/booleans.h>
 #include <cg3/libigl/mesh_distance.h>
 #include <cg3/cgal/aabb_tree3.h>
+#include <cg3/vcglib/smoothing.h>
+
 
 #include "lib/packing/binpack2d.h"
 
@@ -25,6 +29,8 @@ void HFEngine::clear()
 {
 	useSmoothedMesh = false;
 	_boxes.clear();
+	_decomposition.clear();
+	_packing.clear();
 }
 
 void HFEngine::setMesh(const cg3::Dcel &mesh)
@@ -41,6 +47,23 @@ void HFEngine::setOriginalMesh(const cg3::Dcel &mesh)
 void HFEngine::setUseSmoothedMesh(bool b)
 {
 	useSmoothedMesh = b;
+}
+
+Eigen::Matrix3d HFEngine::optimalOrientation(uint nDirs)
+{
+	std::vector<cg3::Vec3d> dirs = cg3::sphereCoverageFibonacci(nDirs-6);
+	dirs.insert(dirs.end(), cg3::AXIS.begin(), cg3::AXIS.end());
+	Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(_mesh, dirs);
+	return rot;
+}
+
+void HFEngine::taubinSmoothing(uint nIt, double lambda, double mu)
+{
+	if (!useSmoothedMesh){
+		_originalMesh = _mesh;
+	}
+	_mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(_mesh, nIt, lambda, mu);
+	useSmoothedMesh = true;
 }
 
 bool HFEngine::usesSmoothedMesh() const
@@ -63,71 +86,6 @@ const std::vector<HFBox>& HFEngine::boxes() const
 	return _boxes;
 }
 
-std::vector<cg3::Vec3d> HFEngine::restoreHighFrequenciesDirs() const
-{
-	Eigen::Matrix3d actualRot = Eigen::Matrix3d::Identity();
-	cg3::Dcel m = _mesh;
-	cg3::cgal::AABBTree3 tree(m);
-	std::vector<cg3::Vec3d> dirs(m.numberVertices(), cg3::Vec3d());
-	std::vector<bool> visited(m.numberVertices(), false);
-
-	for (const HFBox& b : _boxes){
-		if (b.rotationMatrix() != actualRot){
-			actualRot = b.rotationMatrix();
-			m = _mesh;
-			m.rotate(actualRot);
-			tree = cg3::cgal::AABBTree3(m);
-		}
-
-		std::list<const cg3::Dcel::Face*> list = tree.containedDcelFaces(b);
-
-		for (const cg3::Dcel::Face* f : list){
-			for (const cg3::Dcel::Vertex* v : f->incidentVertexIterator()){
-				if (!visited[v->id()] && b.isInside(v->coordinate())){
-					visited[v->id()] = true;
-					cg3::Vec3d dir = cg3::AXIS[b.millingDirection()];
-					dir.rotate(actualRot.transpose());
-					dirs[v->id()] = dir;
-				}
-			}
-		}
-	}
-
-	return dirs;
-}
-
-std::vector<HFBox> HFEngine::restoreHighFrequenciesBoxes() const
-{
-	Eigen::Matrix3d actualRot = Eigen::Matrix3d::Identity();
-	cg3::Dcel m = _mesh;
-	cg3::cgal::AABBTree3 tree(m);
-	HFBox nullBox(m.boundingBox().min(), m.boundingBox().max(), -1, Eigen::Matrix3d::Identity());
-
-	std::vector<HFBox> boxes(m.numberVertices(), nullBox);
-	std::vector<bool> visited(m.numberVertices(), false);
-
-	for (const HFBox& b : _boxes){
-		if (b.rotationMatrix() != actualRot){
-			actualRot = b.rotationMatrix();
-			m = _mesh;
-			m.rotate(actualRot);
-			tree = cg3::cgal::AABBTree3(m);
-		}
-
-		std::list<const cg3::Dcel::Face*> list = tree.containedDcelFaces(b);
-
-		for (const cg3::Dcel::Face* f : list){
-			for (const cg3::Dcel::Vertex* v : f->incidentVertexIterator()){
-				if (!visited[v->id()] && b.isInside(v->coordinate())){
-					visited[v->id()] = true;
-					boxes[v->id()] = b;
-				}
-			}
-		}
-	}
-	return boxes;
-}
-
 void HFEngine::restoreHighFrequencies(uint nIterations, double flipAngle)
 {
 	std::vector<HFBox> boxes = restoreHighFrequenciesBoxes();
@@ -143,32 +101,45 @@ double HFEngine::hausdorffDistance() const
 void HFEngine::computeDecomposition()
 {
 	_decomposition.clear();
-	cg3::Dcel m = _mesh;
+	Eigen::Matrix3d rot = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
+	cg3::SimpleEigenMesh m = _mesh;
 	for (const HFBox& b : _boxes){
+		if (b.rotationMatrix() != rot){
+			rot = b.rotationMatrix();
+			m.rotate(rot);
+		}
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
-		box.rotate(b.rotationMatrix().transpose());
-		//box.saveOnObj("debug/b" + std::to_string(i++) + ".obj");
-		_decomposition.push_back(cg3::libigl::intersection(m, box));
-		m = (cg3::Dcel)cg3::libigl::difference(m, box);
+		cg3::SimpleEigenMesh res = cg3::libigl::intersection(m, box);
+		res.rotate(rot.transpose());
+		_decomposition.push_back(res);
+		m = cg3::libigl::difference(m, box);
 	}
 }
 
-std::map< const cg3::Dcel::Vertex*, int > HFEngine::mappingVertexToBlock(const cg3::cgal::AABBTree3& tree){
-	std::map< const cg3::Dcel::Vertex*,int > mapping;
+void HFEngine::computeDecompositionExact()
+{
+	Eigen::Matrix3d rtmp = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
+	cg3::libigl::CSGTree::MatrixX3E rot = Eigen::Matrix<cg3::libigl::CSGTree::ExactScalar,3,3>::Identity();
 
-	for (uint i = 0; i < _decomposition.size(); i++){
-		for (cg3::Dcel::Vertex* vb : _decomposition[i].vertexIterator()){
-			const cg3::Dcel::Vertex* v = tree.nearestDcelVertex(vb->coordinate());
-			assert(v != nullptr);
-			if (v->coordinate().dist(vb->coordinate()) < cg3::EPSILON){
-				mapping[v] = i;
+	cg3::libigl::CSGTree tree = cg3::libigl::eigenMeshToCSGTree(_mesh);
+	for (const HFBox& b : _boxes){
+		if (b.rotationMatrix() != rtmp){
+			rtmp = b.rotationMatrix();
+			rot = b.rotationMatrix().template cast<cg3::libigl::CSGTree::ExactScalar>();
+			auto V = tree.V();
+			for (unsigned int i = 0; i < V.rows(); i++){
+				V.row(i) =  rot * V.row(i).transpose();
 			}
-			if (tree.squaredDistance(vb->coordinate() < cg3::EPSILON)){
-				vb->setNormal(v->normal());
-			}
+			tree = cg3::libigl::CSGTree(V, tree.F());
 		}
+
+		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
+		cg3::libigl::CSGTree treebox = cg3::libigl::eigenMeshToCSGTree(box);
+		cg3::SimpleEigenMesh res = cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(tree, treebox));
+		res.rotate(rtmp.transpose());
+		_decomposition.push_back(res);
+		tree = cg3::libigl::difference(tree, treebox);
 	}
-	return mapping;
 }
 
 void HFEngine::colorDecomposition()
@@ -246,31 +217,7 @@ std::vector<cg3::Dcel> &HFEngine::decomposition()
 	return _decomposition;
 }
 
-std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor)
-{
-	//rotation
-	std::vector<cg3::Dcel> tmpPacking = _decomposition;
-	packing::rotateAllBlocks(_boxes, tmpPacking);
-
-	//scaling
-	cg3::BoundingBox3 actualStock(stock.min(), cg3::Point3d(stock.maxX()-clearnessStock.x(), stock.maxY()-clearnessStock.x(), stock.maxZ()-clearnessStock.y()));
-	toolLength -= clearnessTool;
-
-	double sizesFactor, toolFactor;
-	packing::worstBlockForStock(tmpPacking, actualStock, sizesFactor);
-	packing::worstBlockForToolLength(tmpPacking, toolLength, toolFactor);
-
-	factor = (sizesFactor < toolFactor ? sizesFactor : toolFactor) * factor;
-
-	for (cg3::Dcel& b : tmpPacking){
-		b.scale(factor);
-		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
-		b.translate(dir);
-	}
-	return tmpPacking;
-}
-
-void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength, double distanceBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool, double factor)
+void HFEngine::computePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength, double distanceBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool, double factor)
 {
 	_packing.clear();
 
@@ -302,34 +249,7 @@ void HFEngine::comutePackingFromDecomposition(const cg3::BoundingBox3& stock, do
 
 }
 
-void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3& stock, const std::vector<std::pair<int, cg3::Point3d>>& pack)
-{
-	_packing.clear();
-
-	for (cg3::Dcel& b : tmpPacking){
-		b.scale(factor);
-		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
-		b.translate(dir);
-	}
-
-	_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
-	uint j = 0;
-	for (const std::pair<int, cg3::Point3d>& p : pack){
-		bool rotated = false;
-		if (p.first < 0)
-			rotated = true;
-
-		_packing[0][j] = tmpPacking[std::abs(p.first)-1];
-		if (rotated) {
-			_packing[0][j].rotate(cg3::Z_AXIS, M_PI/2);
-			_packing[0][j].translate(stock.min() - _packing[0][j].boundingBox().min());
-		}
-		_packing[0][j].translate(p.second - stock.min());
-		j++;
-	}
-}
-
-void HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool)
+bool HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distanceBetweenBlocks, cg3::Point2d clearnessStock, double clearnessTool)
 {
 	auto tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool);
 
@@ -346,7 +266,7 @@ void HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &
 			}
 		}
 
-		packs = packing::packing(bl, stock, distangeBetweenblocks);
+		packs = packing::packing(bl, stock, distanceBetweenBlocks);
 
 		factor-= step;
 	} while(factor > 0 && packs.size() > 1);
@@ -355,6 +275,7 @@ void HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &
 		_packing.clear();
 		setOneStockPacking(tmpPacking, factor, stock, packs[0]);
 	}
+	return factor > 0;
 }
 
 std::vector<std::vector<cg3::Dcel>> HFEngine::packing() const
@@ -385,4 +306,105 @@ void HFEngine::serialize(std::ofstream &binaryFile) const
 void HFEngine::deserialize(std::ifstream &binaryFile)
 {
 	cg3::deserializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition, _packing);
+}
+
+std::vector<HFBox> HFEngine::restoreHighFrequenciesBoxes() const
+{
+	Eigen::Matrix3d actualRot = Eigen::Matrix3d::Identity();
+	cg3::Dcel m = _mesh;
+	cg3::cgal::AABBTree3 tree(m);
+	HFBox nullBox(m.boundingBox().min(), m.boundingBox().max(), -1, Eigen::Matrix3d::Identity());
+
+	std::vector<HFBox> boxes(m.numberVertices(), nullBox);
+	std::vector<bool> visited(m.numberVertices(), false);
+
+	for (const HFBox& b : _boxes){
+		if (b.rotationMatrix() != actualRot){
+			actualRot = b.rotationMatrix();
+			m = _mesh;
+			m.rotate(actualRot);
+			tree = cg3::cgal::AABBTree3(m);
+		}
+
+		std::list<const cg3::Dcel::Face*> list = tree.containedDcelFaces(b);
+
+		for (const cg3::Dcel::Face* f : list){
+			for (const cg3::Dcel::Vertex* v : f->incidentVertexIterator()){
+				if (!visited[v->id()] && b.isInside(v->coordinate())){
+					visited[v->id()] = true;
+					boxes[v->id()] = b;
+				}
+			}
+		}
+	}
+	return boxes;
+}
+
+std::map< const cg3::Dcel::Vertex*, int > HFEngine::mappingVertexToBlock(const cg3::cgal::AABBTree3& tree){
+	std::map< const cg3::Dcel::Vertex*,int > mapping;
+
+	for (uint i = 0; i < _decomposition.size(); i++){
+		for (cg3::Dcel::Vertex* vb : _decomposition[i].vertexIterator()){
+			const cg3::Dcel::Vertex* v = tree.nearestDcelVertex(vb->coordinate());
+			assert(v != nullptr);
+			if (v->coordinate().dist(vb->coordinate()) < cg3::EPSILON){
+				mapping[v] = i;
+			}
+			if (tree.squaredDistance(vb->coordinate() < cg3::EPSILON)){
+				vb->setNormal(v->normal());
+			}
+		}
+	}
+	return mapping;
+}
+
+std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor)
+{
+	//rotation
+	std::vector<cg3::Dcel> tmpPacking = _decomposition;
+	packing::rotateAllBlocks(_boxes, tmpPacking);
+
+	//scaling
+	cg3::BoundingBox3 actualStock(stock.min(), cg3::Point3d(stock.maxX()-clearnessStock.x(), stock.maxY()-clearnessStock.x(), stock.maxZ()-clearnessStock.y()));
+	toolLength -= clearnessTool;
+
+	double sizesFactor, toolFactor;
+	packing::worstBlockForStock(tmpPacking, actualStock, sizesFactor);
+	packing::worstBlockForToolLength(tmpPacking, toolLength, toolFactor);
+
+	factor = (sizesFactor < toolFactor ? sizesFactor : toolFactor) * factor;
+
+	for (cg3::Dcel& b : tmpPacking){
+		b.scale(factor);
+		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+		b.translate(dir);
+	}
+	return tmpPacking;
+}
+
+void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3& stock, const std::vector<std::pair<int, cg3::Point3d>>& pack)
+{
+	_packing.clear();
+
+	for (cg3::Dcel& b : tmpPacking){
+		b.scale(factor);
+		cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+		b.translate(dir);
+	}
+
+	_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
+	uint j = 0;
+	for (const std::pair<int, cg3::Point3d>& p : pack){
+		bool rotated = false;
+		if (p.first < 0)
+			rotated = true;
+
+		_packing[0][j] = tmpPacking[std::abs(p.first)-1];
+		if (rotated) {
+			_packing[0][j].rotate(cg3::Z_AXIS, M_PI/2);
+			_packing[0][j].translate(stock.min() - _packing[0][j].boundingBox().min());
+		}
+		_packing[0][j].translate(p.second - stock.min());
+		j++;
+	}
 }

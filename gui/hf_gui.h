@@ -21,7 +21,7 @@
 #include "guides.h"
 #include "data_structures/user_action.h"
 #include "data_structures/hf_box.h"
-#include "data_structures/hf_engine.h"
+#include "gui/hf_engine_thread.h"
 
 namespace Ui {
 class HFGui;
@@ -59,19 +59,19 @@ public slots:
 	void setProgressBarValue(uint value);
 
 signals:
-	void taubinSmoothing(cg3::Dcel, uint, double, double);
-	void optimalOrientation(cg3::Dcel, uint);
-	void restoreHighFrequencies(HFEngine*, uint, double);
-	void computeDecomposition(HFEngine*);
-	void computeDecompositionExact(HFEngine*);
+	void taubinSmoothing(uint, double, double);
+	void optimalOrientation(uint);
+	void restoreHighFrequencies(uint, double);
+	void computeDecomposition();
+	void computeDecompositionExact();
 	void cut(cg3::Dcel, HFBox);
-	void packInOneStock(std::vector<cg3::Dcel>, cg3::BoundingBox3, double);
+	void computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double);
 
 private slots:
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
-	void taubinSmoothingCompleted(cg3::Dcel m);
+	void taubinSmoothingCompleted();
 
 	//orientation
 	void on_automaticOrientationRadioButton_toggled(bool checked);
@@ -84,6 +84,21 @@ private slots:
 	void on_resetRotationPushButton_clicked();
 
 	void on_manualOrientationDonePushButton_clicked();
+
+	//test frame
+	void on_testOrTrianglesCheckBox_stateChanged(int arg1);
+
+	void on_pxTestRadioButton_toggled(bool checked);
+
+	void on_pyTestRadioButton_toggled(bool checked);
+
+	void on_pzTestRadioButton_toggled(bool checked);
+
+	void on_mxTestRadioButton_toggled(bool checked);
+
+	void on_myTestRadioButton_toggled(bool checked);
+
+	void on_mzTestRadioButton_toggled(bool checked);
 
 	void on_preProcessingNextPushButton_clicked();
 
@@ -135,7 +150,7 @@ private slots:
 	void restoreHighFrequenciesCompleted();
 
 	void on_computeDecompositionPushButton_clicked();
-	void computeDecompositionCompleted(std::vector<cg3::Dcel> dec);
+	void computeDecompositionCompleted();
 
 	void on_nextPostProcessingPushButton_clicked();
 
@@ -152,22 +167,9 @@ private slots:
 	void on_packPushButton_clicked();
 
 	void on_packOneStockButton_clicked();
-	void packInOneStockCompleted(bool success, double factor, std::vector<std::pair<int, cg3::Point3d>> pack);
+	void computeOneStockPackingFromDecompositionCompleted(bool success);
 
-	//test frame
-	void on_testOrTrianglesCheckBox_stateChanged(int arg1);
 
-	void on_pxTestRadioButton_toggled(bool checked);
-
-	void on_pyTestRadioButton_toggled(bool checked);
-
-	void on_pzTestRadioButton_toggled(bool checked);
-
-	void on_mxTestRadioButton_toggled(bool checked);
-
-	void on_myTestRadioButton_toggled(bool checked);
-
-	void on_mzTestRadioButton_toggled(bool checked);
 
 private:
 	Ui::HFGui *ui;
@@ -192,7 +194,7 @@ private:
 	cg3::DrawableBoundingBox3 stock;
 	uint actualTab;
 
-	HFEngine hfEngine;
+	HFEngineThread* hfEngine;
 
 	RotatableMesh rotatableMesh;
 	ManipulableBoundingBox box;

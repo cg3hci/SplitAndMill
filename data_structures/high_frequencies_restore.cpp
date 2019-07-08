@@ -121,6 +121,43 @@ std::vector<cg3::Vec3d> differentialCoordinates(const cg3::Dcel& m)
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+void restoreHighHrequenciesGaussSeidelSingleIteration(
+		cg3::Dcel &smoothMesh,
+		const std::vector<cg3::Vec3d>& hfDirections,
+		double flipAngle,
+		const std::vector<cg3::Vec3d>& diffCoords)
+{
+	#pragma omp parallel for
+	for(uint vid=0; vid<smoothMesh.numberVertices(); ++vid) {
+		//std::cerr << vid << "\n";
+		cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
+		if (v != nullptr){
+			cg3::Vec3d  gauss_iter(0,0,0);
+			double w = 1.0 / v->cardinality();
+			for(cg3::Dcel::Vertex* adj : v->adjacentVertexIterator()) {
+				gauss_iter += w * adj->coordinate();
+			}
+
+			cg3::Point3d newPos = diffCoords.at(vid) + gauss_iter;
+
+			// do binary search until the new pos does not violate the hf condition...
+			int count = 0;
+			while(!validateMove(v, hfDirections.at(vid), newPos, flipAngle) && ++count<5) {
+				newPos = 0.5 * (newPos + v->coordinate());
+			}
+
+			if (count < 5){
+				#pragma omp critical
+				{
+					v->setCoordinate(newPos);
+					for (cg3::Dcel::Face* f : v->incidentFaceIterator())
+						f->updateNormal();
+				}
+			}
+		}
+	}
+}
+
 void restoreHighHrequenciesGaussSeidel(
         cg3::Dcel& smoothMesh,
         const cg3::Dcel& detailMesh,
@@ -131,37 +168,50 @@ void restoreHighHrequenciesGaussSeidel(
 	std::vector<cg3::Vec3d> diffCoords = differentialCoordinates(detailMesh);
 
 	for(int i=0; i<nIters; ++i) {
-		#pragma omp parallel for
-		for(uint vid=0; vid<smoothMesh.numberVertices(); ++vid) {
-			//std::cerr << vid << "\n";
-			cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
-			if (v != nullptr){
-				cg3::Vec3d  gauss_iter(0,0,0);
-				double w = 1.0 / v->cardinality();
-				for(cg3::Dcel::Vertex* adj : v->adjacentVertexIterator()) {
-					gauss_iter += w * adj->coordinate();
-				}
+		restoreHighHrequenciesGaussSeidelSingleIteration(
+					smoothMesh,
+					hfDirections,
+					flipAngle,
+					diffCoords);
+	}
+	smoothMesh.updateVertexNormals();
+}
 
-				cg3::Point3d newPos = diffCoords.at(vid) + gauss_iter;
+void restoreHighHrequenciesGaussSeidelSingleIteration(
+		cg3::Dcel &smoothMesh,
+		const std::vector<HFBox> &hfBoxes,
+		double flipAngle,
+		const std::vector<cg3::Vec3d>& diffCoords)
+{
+	#pragma omp parallel for
+	for(uint vid=0; vid<smoothMesh.numberVertices(); ++vid) {
+		//std::cerr << vid << "\n";
+		cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
+		if (v != nullptr){
+			cg3::Vec3d  gauss_iter(0,0,0);
+			double w = 1.0 / v->cardinality();
+			for(cg3::Dcel::Vertex* adj : v->adjacentVertexIterator()) {
+				gauss_iter += w * adj->coordinate();
+			}
 
-				// do binary search until the new pos does not violate the hf condition...
-				int count = 0;
-				while(!validateMove(v, hfDirections.at(vid), newPos, flipAngle) && ++count<5) {
-					newPos = 0.5 * (newPos + v->coordinate());
-				}
+			cg3::Point3d newPos = diffCoords.at(vid) + gauss_iter;
 
-				if (count < 5){
-					#pragma omp critical
-					{
-						v->setCoordinate(newPos);
-						for (cg3::Dcel::Face* f : v->incidentFaceIterator())
-							f->updateNormal();
-					}
+			// do binary search until the new pos does not violate the hf condition...
+			int count = 0;
+			while(!validateMove(v, hfBoxes.at(vid), newPos, flipAngle) && ++count<5) {
+				newPos = 0.5 * (newPos + v->coordinate());
+			}
+
+			if (count < 5){
+				#pragma omp critical
+				{
+					v->setCoordinate(newPos);
+					for (cg3::Dcel::Face* f : v->incidentFaceIterator())
+						f->updateNormal();
 				}
 			}
 		}
 	}
-	smoothMesh.updateVertexNormals();
 }
 
 void restoreHighHrequenciesGaussSeidel(
@@ -174,35 +224,11 @@ void restoreHighHrequenciesGaussSeidel(
 	std::vector<cg3::Vec3d> diffCoords = differentialCoordinates(detailMesh);
 
 	for(int i=0; i<nIters; ++i) {
-		#pragma omp parallel for
-		for(uint vid=0; vid<smoothMesh.numberVertices(); ++vid) {
-			//std::cerr << vid << "\n";
-			cg3::Dcel::Vertex* v = smoothMesh.vertex(vid);
-			if (v != nullptr){
-				cg3::Vec3d  gauss_iter(0,0,0);
-				double w = 1.0 / v->cardinality();
-				for(cg3::Dcel::Vertex* adj : v->adjacentVertexIterator()) {
-					gauss_iter += w * adj->coordinate();
-				}
-
-				cg3::Point3d newPos = diffCoords.at(vid) + gauss_iter;
-
-				// do binary search until the new pos does not violate the hf condition...
-				int count = 0;
-				while(!validateMove(v, hfBoxes.at(vid), newPos, flipAngle) && ++count<5) {
-					newPos = 0.5 * (newPos + v->coordinate());
-				}
-
-				if (count < 5){
-					#pragma omp critical
-					{
-						v->setCoordinate(newPos);
-						for (cg3::Dcel::Face* f : v->incidentFaceIterator())
-							f->updateNormal();
-					}
-				}
-			}
-		}
+		restoreHighHrequenciesGaussSeidelSingleIteration(
+					smoothMesh,
+					hfBoxes,
+					flipAngle,
+					diffCoords);
 	}
 	smoothMesh.updateVertexNormals();
 }

@@ -61,12 +61,12 @@ HEADERS += \
     data_structures/user_action.h \
     gui/arrow.h \
     gui/guides.h \
+    gui/hf_engine_thread.h \
     gui/hf_gui.h \
     gui/hfmainwindow.h \
     gui/manipulable_boundingbox.h \
     gui/manipulable_sphere.h \
     gui/rotatable_mesh.h \
-    gui/thread_worker.h \
     lib/packing/binpack2d.h
 
 
@@ -77,12 +77,12 @@ SOURCES += \
     data_structures/packing.cpp \
     data_structures/user_action.cpp \
     gui/guides.cpp \
+    gui/hf_engine_thread.cpp \
     gui/hf_gui.cpp \
     gui/hfmainwindow.cpp \
     gui/manipulable_boundingbox.cpp \
     gui/manipulable_sphere.cpp \
     gui/rotatable_mesh.cpp \
-    gui/thread_worker.cpp \
     main.cpp
 
 FORMS += \
