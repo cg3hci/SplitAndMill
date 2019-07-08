@@ -458,8 +458,10 @@ void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 	}
 	if (load){
 		bool b = hfFrame->loadHFD(fileHFD);
-		setSaved(b);
-		setLoadedButtons(b);
+		if (b) {
+			setSaved(true);
+			setLoadedButtons(true);
+		}
 	}
 }
 

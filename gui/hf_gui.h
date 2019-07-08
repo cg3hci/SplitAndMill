@@ -53,6 +53,19 @@ public:
 	int selectedTestdirection() const;
 	void colorTestMesh();
 
+	void undoChangeTab();
+	void redoChangeTab();
+	void undoSmoothing();
+	void redoSmoothing();
+	void undoRotate();
+	void redoRotate();
+	void undoCut();
+	void redoCut();
+	void undoRestore();
+	void redoRestore();
+	void undoDecomposition();
+	void redoDecomposition();
+
 public slots:
 	void undo();
 	void redo();
@@ -123,11 +136,11 @@ private slots:
 	void startCut();
 	void cutCompleted(cg3::Dcel res);
 
-	void on_xGuideCheckBox_stateChanged(int arg1);
+	void on_xGuidesCheckBox_stateChanged(int arg1);
 
 	void on_yGuidesCheckBox_stateChanged(int arg1);
 
-	void on_zGiudesCheckBox_stateChanged(int arg1);
+	void on_zGuidesCheckBox_stateChanged(int arg1);
 
 	void on_snapMinXPushButton_clicked();
 

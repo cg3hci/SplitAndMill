@@ -17,15 +17,18 @@ public:
 
 	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix, const Eigen::Matrix3d& actualRotationMatrix, uint tab);
 	UserAction(const cg3::Dcel& mesh, const HFBox& box, uint tab);
-	UserAction(const cg3::Dcel& mesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab);
+	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& smoothedMesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab);
 	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& restoredMesh, uint nIters, uint tab);
 	UserAction(const std::vector<cg3::Dcel>& decomposition, uint tab);
+	UserAction(uint fromTab, uint toTab);
 
-	typedef enum {SMOOTHING, ROTATE, CUT, RESTORE_HIGH_FREQ, DECOMPOSITION} ActionType;
+
+	typedef enum {CHANGE_TAB, SMOOTHING, ROTATE, CUT, RESTORE_HIGH_FREQ, DECOMPOSITION} ActionType;
 
 	ActionType type() const;
 	const cg3::Dcel& mesh() const;
 	const cg3::Dcel& restoredMesh() const;
+	const cg3::Dcel& smoothedMesh() const;
 	double lambda() const;
 	double mu() const;
 	uint nIterations() const;
@@ -34,6 +37,8 @@ public:
 	Eigen::Matrix3d actualRotationMatrix() const;
 	HFBox box() const;
 	uint tab() const;
+	uint fromTab() const;
+	uint toTab() const;
 	const std::vector<cg3::Dcel>& decomposition();
 
 private:
@@ -47,6 +52,7 @@ private:
 	Eigen::Matrix3d actualRot;
 	HFBox _box;
 	std::vector<cg3::Dcel> _decomposition;
+	uint _fromTab;
 	uint _tab;
 };
 

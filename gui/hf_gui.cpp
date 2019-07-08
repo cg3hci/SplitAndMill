@@ -17,8 +17,6 @@
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 #include <cg3/vcglib/smoothing.h>
 
-#include "thread_worker.h"
-
 HFGui::HFGui(QWidget *parent) :
     QFrame(parent),
 	ui(new Ui::HFGui),
@@ -410,13 +408,6 @@ void HFGui::changeTab(uint tab)
 	tabs[tab]->setVisible(true);
 	tabLabels[tab]->setEnabled(true);
 	actualTab = tab;
-	if (tab >= 2){
-		ui->testOrTrianglesCheckBox->setChecked(false);
-		ui->testFrame->setVisible(false);
-	}
-	else {
-		ui->testFrame->setVisible(true);
-	}
 }
 
 void HFGui::startWork()
@@ -486,63 +477,229 @@ void HFGui::colorTestMesh()
 	mw.canvas.update();
 }
 
+void HFGui::undoChangeTab()
+{
+	changeTab(actions[actualAction].fromTab());
+	switch(actualTab){
+	case 0:
+		mw.deleteDrawableObject(&box);
+		ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
+		colorTestMesh();
+		break;
+	case 1:
+		mw.pushDrawableObject(&box, "Box");
+		guides.setDrawX(ui->xGuidesCheckBox->isChecked());
+		guides.setDrawY(ui->yGuidesCheckBox->isChecked());
+		guides.setDrawZ(ui->zGuidesCheckBox->isChecked());
+		break;
+	case 2:
+		mw.setDrawableObjectVisibility(&hfDecomposition, true);
+		mw.deleteDrawableObject(&stock);
+		break;
+	default:
+		assert(0);
+	}
+	mw.canvas.update();
+}
+
+void HFGui::redoChangeTab()
+{
+	changeTab(actions[actualAction].toTab());
+	switch(actualTab){
+	case 1:
+		ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
+		colorTestMesh();
+		mw.pushDrawableObject(&box, "Box");
+		break;
+	case 2:
+		mw.deleteDrawableObject(&box);
+		break;
+	case 3:
+		mw.setDrawableObjectVisibility(&hfDecomposition, false);
+		mw.pushDrawableObject(&stock, "Stock");
+		break;
+	default:
+		assert(0);
+	}
+	mw.canvas.update();
+}
+
+void HFGui::undoSmoothing()
+{
+	mesh = actions[actualAction].mesh();
+	hfEngine->setMesh(mesh);
+	if (actions[actualAction].firstSmoothing()){
+		hfEngine->setUseSmoothedMesh(false);
+		mw.deleteDrawableObject(&originalMesh);
+		mw.setDrawableObjectName(&mesh, "Loaded Mesh");
+	}
+	totalVolume = mesh.volume();
+	totalSurface = mesh.surfaceArea();
+	remainingVolume = totalVolume;
+	remainingSurface = totalSurface;
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::redoSmoothing()
+{
+	if (actions[actualAction].firstSmoothing()){
+		originalMesh = actions[actualAction].mesh();
+		hfEngine->setOriginalMesh(originalMesh);
+		originalMesh.update();
+		mw.refreshDrawableObject(&originalMesh);
+		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
+		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
+	}
+
+	hfEngine->setMesh(actions[actualAction].restoredMesh());
+	totalVolume = mesh.volume();
+	totalSurface = mesh.surfaceArea();
+	remainingVolume = totalVolume;
+	remainingSurface = totalSurface;
+	colorTestMesh();
+	ui->lambdaSpinBox->setValue(actions[actualAction].lambda());
+	ui->muSpinBox->setValue(actions[actualAction].mu());
+	ui->nIterationsSpinBox->setValue(actions[actualAction].nIterations());
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::undoRotate()
+{
+	mesh = actions[actualAction].mesh();
+	actualRotationMatrix = actions[actualAction].actualRotationMatrix(); //avoid numerical errors
+	colorTestMesh();
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::redoRotate()
+{
+	Eigen::Matrix3d rot = actions[actualAction].rotationMatrix();
+	actualRotationMatrix *= rot;
+	mesh.rotate(rot);
+	colorTestMesh();
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::undoCut()
+{
+	bool b = mesh.isVisible();
+	mesh = actions[actualAction].mesh();
+	box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
+	box.setMillingDirection(actions[actualAction].box().millingDirection());
+	hfEngine->popBox();
+	mw.setDrawableObjectVisibility(&mesh, b);
+	mw.pushDrawableObject(&box, "Box");
+	mw.deleteDrawableObject(&hfDecomposition);
+	updateSurfaceAndvolume();
+	changeTab(actions[actualAction].tab());
+	guides.popGuide();
+	guides.popGuide();
+	ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::redoCut()
+{
+	startWork();
+	guides.pushGuide(box.min());
+	guides.pushGuide(box.max());
+	ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
+	box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
+	box.setMillingDirection(actions[actualAction].box().millingDirection());
+
+	hfEngine->pushBox(actions[actualAction].box());
+
+	emit cut(mesh, actions[actualAction].box());
+}
+
+void HFGui::undoRestore()
+{
+	mesh = actions[actualAction].mesh();
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::redoRestore()
+{
+	mesh = actions[actualAction].restoredMesh();
+	ui->nRestoreIterationsSpinBox->setValue(actions[actualAction].nIterations());
+	hfEngine->setMesh(mesh);
+	mesh.update();
+	mw.refreshDrawableObject(&mesh);
+	treeMesh = cg3::cgal::AABBTree3(mesh);
+	mw.canvas.update();
+}
+
+void HFGui::undoDecomposition()
+{
+	hfEngine->decomposition().clear();
+	mw.setDrawableObjectVisibility(&mesh, true);
+	mw.setDrawableObjectVisibility(&originalMesh, false);
+	mw.deleteDrawableObject(&hfDecomposition);
+	hfDecomposition.clear();
+	ui->nextPostProcessingPushButton->setEnabled(false);
+	mw.setSaveDecompositionButtons(false);
+	mw.canvas.update();
+}
+
+void HFGui::redoDecomposition()
+{
+	uint i = 0;
+	hfDecomposition.clear();
+	hfEngine->decomposition() = actions[actualAction].decomposition();
+	hfEngine->colorDecomposition();
+	for (const cg3::Dcel& d : hfEngine->decomposition())
+		hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
+
+	mw.setDrawableObjectVisibility(&mesh, false);
+	mw.setDrawableObjectVisibility(&originalMesh, false);
+	mw.pushDrawableObject(&hfDecomposition, "Decomposition");
+	mw.canvas.update();
+	ui->nextPostProcessingPushButton->setEnabled(true);
+	mw.setSaveDecompositionButtons(true);
+}
+
 void HFGui::undo()
 {
 	if (actualAction != 0 && actualTab <= 2){
 		actualAction--;
-		bool b;
 		switch(actions[actualAction].type()){
+		case UserAction::CHANGE_TAB:
+			undoChangeTab();
+			break;
 		case UserAction::SMOOTHING :
-			mesh = actions[actualAction].mesh();
-			hfEngine->setMesh(mesh);
-			if (actions[actualAction].firstSmoothing()){
-				hfEngine->setUseSmoothedMesh(false);
-				mw.deleteDrawableObject(&originalMesh);
-				mw.setDrawableObjectName(&mesh, "Loaded Mesh");
-			}
-			totalVolume = mesh.volume();
-			totalSurface = mesh.surfaceArea();
-			remainingVolume = totalVolume;
-			remainingSurface = totalSurface;
-			changeTab(actions[actualAction].tab());
+			undoSmoothing();
 			break;
 		case UserAction::ROTATE :
-			mesh = actions[actualAction].mesh();
-			actualRotationMatrix = actions[actualAction].actualRotationMatrix(); //avoid numerical errors
-			changeTab(actions[actualAction].tab());
+			undoRotate();
 			break;
 		case UserAction::CUT :
-			b = mesh.isVisible();
-			mesh = actions[actualAction].mesh();
-			box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
-			box.setMillingDirection(actions[actualAction].box().millingDirection());
-			hfEngine->popBox();
-			mw.setDrawableObjectVisibility(&mesh, b);
-			mw.pushDrawableObject(&box, "Box");
-			mw.deleteDrawableObject(&hfDecomposition);
-			updateSurfaceAndvolume();
-			changeTab(actions[actualAction].tab());
-			guides.popGuide();
-			guides.popGuide();
-			ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
+			undoCut();
 			break;
 		case UserAction::RESTORE_HIGH_FREQ :
-			mesh = actions[actualAction].mesh();
-			changeTab(actions[actualAction].tab());
+			undoRestore();
 			break;
 		case UserAction::DECOMPOSITION:
-			mw.setDrawableObjectVisibility(&mesh, true);
-			mw.setDrawableObjectVisibility(&originalMesh, false);
-			mw.deleteDrawableObject(&hfDecomposition);
-			changeTab(actions[actualAction].tab());
-			ui->nextPostProcessingPushButton->setEnabled(false);
-			mw.setSaveDecompositionButtons(false);
+			undoDecomposition();
 			break;
 		}
-		mesh.update();
-		mw.refreshDrawableObject(&mesh);
-		treeMesh = cg3::cgal::AABBTree3(mesh);
-		mw.canvas.update();
 		mw.setSaved(false);
 	}
 }
@@ -550,78 +707,26 @@ void HFGui::undo()
 void HFGui::redo()
 {
 	if (actualAction < actions.size() && actualTab <= 2){
-		Eigen::Matrix3d rot;
-		bool v;
-		cg3::SimpleEigenMesh b;
-		uint i = 0;
 		switch(actions[actualAction].type()){
+		case UserAction::CHANGE_TAB:
+			redoChangeTab();
+			break;
 		case UserAction::SMOOTHING :
-			if (actions[actualAction].firstSmoothing()){
-				originalMesh = actions[actualAction].mesh();
-				hfEngine->setOriginalMesh(originalMesh);
-				originalMesh.update();
-				mw.refreshDrawableObject(&originalMesh);
-				mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
-				mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
-			}
-			//mesh = (cg3::Dcel)cg3::vcglib::taubinSmoothing(mesh, actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
-			hfEngine->setMesh(mesh);
-			totalVolume = mesh.volume();
-			totalSurface = mesh.surfaceArea();
-			remainingVolume = totalVolume;
-			remainingSurface = totalSurface;
-			changeTab(0);
-			colorTestMesh();
-			emit taubinSmoothing(actions[actualAction].nIterations(), actions[actualAction].lambda(), actions[actualAction].mu());
+			redoSmoothing();
 			break;
 		case UserAction::ROTATE :
-			rot = actions[actualAction].rotationMatrix();
-			actualRotationMatrix *= rot;
-			mesh.rotate(rot);
-			changeTab(0);
-			colorTestMesh();
+			redoRotate();
 			break;
 		case UserAction::CUT :
-			v = mesh.isVisible();
-			box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
-			b = cg3::EigenMeshAlgorithms::makeBox(box.min(), box.max());
-			mesh = cg3::DrawableDcel(cg3::libigl::difference(mesh, b));
-			box.setMillingDirection(actions[actualAction].box().millingDirection());
-			hfEngine->pushBox(actions[actualAction].box());
-			mw.setDrawableObjectVisibility(&mesh, v);
-			updateSurfaceAndvolume();
-			changeTab(1);
-			guides.pushGuide(box.min());
-			guides.pushGuide(box.max());
-			ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
+			redoCut();
 			break;
 		case UserAction::RESTORE_HIGH_FREQ:
-			mesh = actions[actualAction].restoredMesh();
-			ui->nRestoreIterationsSpinBox->setValue(actions[actualAction].nIterations());
-			hfEngine->setMesh(mesh);
-			changeTab(2);
+			redoRestore();
 			break;
 		case UserAction::DECOMPOSITION:
-			i = 0;
-			hfDecomposition.clear();
-			hfEngine->decomposition() = actions[actualAction].decomposition();
-			hfEngine->colorDecomposition();
-			for (const cg3::Dcel& d : hfEngine->decomposition())
-				hfDecomposition.pushBack(d, "Block " + std::to_string(i++));
-
-			mw.setDrawableObjectVisibility(&mesh, false);
-			mw.setDrawableObjectVisibility(&originalMesh, false);
-			mw.pushDrawableObject(&hfDecomposition, "Decomposition");
-			mw.canvas.update();
-			ui->nextPostProcessingPushButton->setEnabled(true);
-			mw.setSaveDecompositionButtons(true);
-			changeTab(2);
+			redoDecomposition();
 			break;
 		}
-		mesh.update();
-		mw.refreshDrawableObject(&mesh);
-		treeMesh = cg3::cgal::AABBTree3(mesh);
-		mw.canvas.update();
 		actualAction++;
 		mw.setSaved(false);
 	}
@@ -636,33 +741,29 @@ void HFGui::on_taubinSmoothingPushButton_clicked()
 {
 	startWork();
 
-	bool firstSmooth = false;
-	mesh.setFaceColors(cg3::GREY);
-	if (!mw.containsDrawableObject(&originalMesh)){
-		originalMesh = mesh;
-		originalMesh.update();
-		hfEngine->setOriginalMesh(originalMesh);
-		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
-		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
-		firstSmooth = true;
-	}
-	addAction(UserAction(mesh, ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth, actualTab));
-
 	emit taubinSmoothing(ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value());
 }
 
 void HFGui::taubinSmoothingCompleted()
 {
+	bool firstSmooth = false;
+	mesh.setFaceColors(cg3::GREY);
+	if (!mw.containsDrawableObject(&originalMesh)){
+		originalMesh = mesh;
+		originalMesh.update();
+		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
+		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
+		firstSmooth = true;
+	}
+	addAction(UserAction(mesh, hfEngine->mesh(), ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth, actualTab));
 	mesh = hfEngine->mesh();
 	mesh.setFaceFlags(0);
 	mesh.setFaceColors(cg3::GREY);
 	mesh.update();
-	hfEngine->setMesh(mesh);
 	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 
 	mw.canvas.update();
-
 
 	endWork();
 }
@@ -744,6 +845,7 @@ void HFGui::on_preProcessingNextPushButton_clicked()
 	mw.pushDrawableObject(&box, "box");
 	mw.setDrawableObjectVisibility(&mesh, true);
 	mw.deleteDrawableObject(&rotatableMesh);
+	addAction(UserAction(0, 1));
 	changeTab(1);
 	colorTestMesh();
 	guides.setBoundingBox(mesh.boundingBox());
@@ -968,7 +1070,7 @@ void HFGui::cutCompleted(cg3::Dcel res)
 	endWork();
 }
 
-void HFGui::on_xGuideCheckBox_stateChanged(int arg1)
+void HFGui::on_xGuidesCheckBox_stateChanged(int arg1)
 {
 	guides.setDrawX(arg1 == Qt::Checked);
 	mw.canvas.update();
@@ -980,7 +1082,7 @@ void HFGui::on_yGuidesCheckBox_stateChanged(int arg1)
 	mw.canvas.update();
 }
 
-void HFGui::on_zGiudesCheckBox_stateChanged(int arg1)
+void HFGui::on_zGuidesCheckBox_stateChanged(int arg1)
 {
 	guides.setDrawZ(arg1 == Qt::Checked);
 	mw.canvas.update();
@@ -1050,6 +1152,7 @@ void HFGui::on_decompositionNextPushButton_clicked()
 
 void HFGui::finishDecomposition()
 {
+	addAction(UserAction(1, 2));
 	changeTab(2);
 
 	if (mw.containsDrawableObject(&originalMesh)){
@@ -1119,6 +1222,7 @@ void HFGui::computeDecompositionCompleted()
 
 void HFGui::on_nextPostProcessingPushButton_clicked()
 {
+	addAction(UserAction(2, 3));
 	changeTab(3);
 	ui->clearPackingPushButton->setEnabled(false);
 	mw.setDrawableObjectVisibility(&hfDecomposition, false);

@@ -27,9 +27,10 @@ UserAction::UserAction(const cg3::Dcel &mesh, const HFBox &box, uint tab) :
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab) :
+UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel& smoothedMesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab) :
 	actionType(SMOOTHING),
 	_mesh(mesh),
+	_restoredMesh(smoothedMesh),
 	_lambda(lambda),
 	_mu(mu),
 	nIt(nIters),
@@ -54,6 +55,13 @@ UserAction::UserAction(const std::vector<cg3::Dcel> &decomposition, uint tab) :
 {
 }
 
+UserAction::UserAction(uint fromTab, uint toTab) :
+	actionType(CHANGE_TAB),
+	_fromTab(fromTab),
+	_tab(toTab)
+{
+}
+
 UserAction::ActionType UserAction::type() const
 {
 	return actionType;
@@ -65,6 +73,11 @@ const cg3::Dcel &UserAction::mesh() const
 }
 
 const cg3::Dcel &UserAction::restoredMesh() const
+{
+	return _restoredMesh;
+}
+
+const cg3::Dcel &UserAction::smoothedMesh() const
 {
 	return _restoredMesh;
 }
@@ -105,6 +118,16 @@ HFBox UserAction::box() const
 }
 
 uint UserAction::tab() const
+{
+	return _tab;
+}
+
+uint UserAction::fromTab() const
+{
+	return _fromTab;
+}
+
+uint UserAction::toTab() const
 {
 	return _tab;
 }
