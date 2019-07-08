@@ -171,7 +171,7 @@ private slots:
     void on_actionShow_Hide_DrawList_triggered();
     void on_actionReset_Point_of_View_triggered();
     void on_actionPerspective_Orthographic_Camera_Mode_triggered();
-    void on_actionShow_Unit_Box_triggered();
+	void on_actionShow_Box_triggered();
 
 	void on_loadToolButton_clicked();
 	void on_loadHFDToolButton_clicked();
@@ -179,6 +179,7 @@ private slots:
 	void on_saveDecompositionToolButton_clicked();
 	void on_savePackingToolButton_clicked();
 	void on_showAxisToolButton_toggled(bool b);
+	void on_showBoxToolButton_toggled(bool b);
 
 	// QWidget interface
 protected:

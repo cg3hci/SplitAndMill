@@ -44,6 +44,10 @@ public:
 	bool saveDecomposition();
 	bool packingComputed();
 	bool savePacking();
+	void drawBox();
+	bool boxIsDrawn();
+
+private:
 	void clear();
 	void addAction(const UserAction& action);
 	void updateSurfaceAndvolume();
@@ -66,11 +70,6 @@ public:
 	void undoDecomposition();
 	void redoDecomposition();
 
-public slots:
-	void undo();
-	void redo();
-	void setProgressBarValue(uint value);
-
 signals:
 	void taubinSmoothing(uint, double, double);
 	void optimalOrientation(uint);
@@ -81,6 +80,10 @@ signals:
 	void computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double);
 
 private slots:
+
+	void undo();
+	void redo();
+	void setProgressBarValue(uint value);
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
@@ -212,6 +215,7 @@ private:
 	RotatableMesh rotatableMesh;
 	ManipulableBoundingBox box;
 	Guides guides;
+	cg3::DrawableBoundingBox3 drawableBox;
 
 	std::vector<UserAction> actions;
 	uint actualAction;

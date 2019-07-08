@@ -577,10 +577,9 @@ void HFMainWindow::on_actionPerspective_Orthographic_Camera_Mode_triggered()
     canvas.update();
 }
 
-void HFMainWindow::on_actionShow_Unit_Box_triggered()
+void HFMainWindow::on_actionShow_Box_triggered()
 {
-    canvas.toggleUnitBox();
-	canvas.update();
+	hfFrame->drawBox();
 }
 
 void HFMainWindow::on_loadToolButton_clicked()
@@ -612,6 +611,12 @@ void HFMainWindow::on_showAxisToolButton_toggled(bool b)
 {
 	if (b != ui->glCanvas->axisIsDrawn())
 		ui->actionShow_Axis->trigger();
+}
+
+void HFMainWindow::on_showBoxToolButton_toggled(bool b)
+{
+	if (b != hfFrame->boxIsDrawn())
+		ui->actionShow_Box->trigger();
 }
 
 void HFMainWindow::closeEvent(QCloseEvent *event)

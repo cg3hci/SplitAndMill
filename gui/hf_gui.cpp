@@ -28,6 +28,7 @@ HFGui::HFGui(QWidget *parent) :
 	hfEngine(new HFEngineThread()),
 	rotatableMesh(mw.canvas),
 	box(mw.canvas),
+	drawableBox(cg3::Point3d(-1,-1,-1), cg3::Point3d(1,1,1)),
 	actualAction(0)
 {
     ui->setupUi(this);
@@ -51,6 +52,7 @@ HFGui::HFGui(QWidget *parent) :
 	lshfd.addSupportedExtension("hfd");
 	mw.canvas.toggleCameraType();
 	mw.canvas.pushDrawableObject(&guides);
+	mw.canvas.pushDrawableObject(&drawableBox, false);
 
 	connect(&mw, SIGNAL(undoEvent()),
 			this, SLOT(undo()));
@@ -345,6 +347,20 @@ bool HFGui::savePacking()
 		return true;
 	}
 	return false;
+}
+
+void HFGui::drawBox()
+{
+	bool b = !drawableBox.isVisible();
+	if (b && mesh.numberVertices() > 0)
+		drawableBox = mesh.boundingBox();
+	mw.canvas.setDrawableObjectVisibility(&drawableBox, b);
+	mw.canvas.update();
+}
+
+bool HFGui::boxIsDrawn()
+{
+	return drawableBox.isVisible();
 }
 
 void HFGui::clear()

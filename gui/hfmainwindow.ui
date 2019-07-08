@@ -57,7 +57,7 @@
     <addaction name="actionReset_Point_of_View"/>
     <addaction name="actionPerspective_Orthographic_Camera_Mode"/>
     <addaction name="actionShow_Axis"/>
-    <addaction name="actionShow_Unit_Box"/>
+    <addaction name="actionShow_Box"/>
     <addaction name="actionUpdate_Canvas"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
@@ -347,6 +347,26 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="showBoxToolButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../res/res.qrc">
+         <normaloff>:/box.png</normaloff>:/box.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>48</width>
+         <height>48</height>
+        </size>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -495,9 +515,9 @@
     <string>D</string>
    </property>
   </action>
-  <action name="actionShow_Unit_Box">
+  <action name="actionShow_Box">
    <property name="text">
-    <string>Show Unit Box</string>
+    <string>Show Box</string>
    </property>
    <property name="shortcut">
     <string>B</string>

@@ -8,5 +8,6 @@
         <file>save-document-decomp.png</file>
         <file>save-document-packing.png</file>
         <file>axis.png</file>
+        <file>box.png</file>
     </qresource>
 </RCC>
