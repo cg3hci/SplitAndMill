@@ -46,6 +46,9 @@ public:
 	bool savePacking();
 	void drawBox();
 	bool boxIsDrawn();
+	void enableVisibleTab(bool b);
+	void enableManualRotation(bool b);
+	void resetRotation();
 
 private:
 	void clear();
@@ -91,16 +94,8 @@ private slots:
 	void taubinSmoothingCompleted();
 
 	//orientation
-	void on_automaticOrientationRadioButton_toggled(bool checked);
-
-	void on_manualOrientationRadioButton_toggled(bool checked);
-
 	void on_optimalOrientationPushButton_clicked();
 	void optimalOrientationCompleted(Eigen::Matrix3d rot);
-
-	void on_resetRotationPushButton_clicked();
-
-	void on_manualOrientationDonePushButton_clicked();
 
 	//test frame
 	void on_testOrTrianglesCheckBox_stateChanged(int arg1);
@@ -185,8 +180,6 @@ private slots:
 
 	void on_packOneStockButton_clicked();
 	void computeOneStockPackingFromDecompositionCompleted(bool success);
-
-
 
 private:
 	Ui::HFGui *ui;

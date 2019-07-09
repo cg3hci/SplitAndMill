@@ -41,7 +41,6 @@ HFGui::HFGui(QWidget *parent) :
 	tabLabels[2] = ui->postProcessingLabel;
 	tabs[3] = ui->packingFrame;
 	tabLabels[3] = ui->packingLabel;
-	ui->testFrame->setVisible(false);
 
 	QPixmap pixmap(":/green.ico");
 	ui->circLabel->setPixmap(pixmap);
@@ -108,7 +107,6 @@ bool HFGui::loadMesh()
 			mw.canvas.update();
 
 			changeTab(0);
-			ui->testFrame->setVisible(true);
 			guides.setBoundingBox(mesh.boundingBox());
 			return true;
 		}
@@ -180,6 +178,11 @@ void HFGui::afterLoadHFD()
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 	}
 	updateSurfaceAndvolume();
+	if (actualTab < 2)
+		mw.setRotationButton(true);
+	else
+		mw.setRotationButton(false);
+
 	if (actualTab == 1){
 		box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 		mw.pushDrawableObject(&box, "box");
@@ -332,6 +335,45 @@ bool HFGui::boxIsDrawn()
 	return drawableBox.isVisible();
 }
 
+void HFGui::enableVisibleTab(bool b)
+{
+	tabs[actualTab]->setEnabled(b);
+	tabLabels[actualTab]->setEnabled(b);
+}
+
+void HFGui::enableManualRotation(bool b)
+{
+	enableVisibleTab(!b);
+	if (b){
+		mw.setDrawableObjectVisibility(&mesh, false);
+		mw.setDrawableObjectVisibility(&box, false);
+		rotatableMesh.setMesh(mesh);
+		mw.pushDrawableObject(&rotatableMesh, "Rot");
+	}
+	else {
+		if (mw.containsDrawableObject(&rotatableMesh)){ //manage reset button
+			Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
+			addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
+			actualRotationMatrix *= rot;
+			mesh.rotate(rot);
+			mesh.update();
+			treeMesh = cg3::cgal::AABBTree3(mesh);
+			mw.setDrawableObjectVisibility(&mesh, true);
+			mw.deleteDrawableObject(&rotatableMesh);
+			mw.setDrawableObjectVisibility(&box, true);
+		}
+	}
+	mw.canvas.update();
+}
+
+void HFGui::resetRotation()
+{
+	rotatableMesh.resetRotation();
+	mw.setDrawableObjectVisibility(&mesh, true);
+	mw.deleteDrawableObject(&rotatableMesh);
+	mw.setDrawableObjectVisibility(&box, true);
+}
+
 void HFGui::clear()
 {
 	mw.deleteDrawableObject(&mesh);
@@ -398,7 +440,6 @@ void HFGui::changeTab(uint tab)
 void HFGui::startWork()
 {
 	tabs[actualTab]->setEnabled(false);
-	ui->testFrame->setVisible(false);
 	ui->progressBar->setValue(0);
 	QMovie *movie = new QMovie(":/wait.gif");
 	ui->circLabel->setMovie(movie);
@@ -408,8 +449,6 @@ void HFGui::startWork()
 void HFGui::endWork()
 {
 	tabs[actualTab]->setEnabled(true);
-	if (actualTab == 0)
-		ui->testFrame->setVisible(true);
 	ui->progressBar->setValue(100);
 	ui->circLabel->setMovie(nullptr);
 	QPixmap pixmap(":/green.ico");
@@ -465,6 +504,10 @@ void HFGui::colorTestMesh()
 void HFGui::undoChangeTab()
 {
 	changeTab(actions[actualAction].fromTab());
+	if (actualTab < 2)
+		mw.setRotationButton(true);
+	else
+		mw.setRotationButton(false);
 	switch(actualTab){
 	case 0:
 		mw.deleteDrawableObject(&box);
@@ -490,6 +533,10 @@ void HFGui::undoChangeTab()
 void HFGui::redoChangeTab()
 {
 	changeTab(actions[actualAction].toTab());
+	if (actualTab < 2)
+		mw.setRotationButton(true);
+	else
+		mw.setRotationButton(false);
 	switch(actualTab){
 	case 1:
 		ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
@@ -779,7 +826,7 @@ void HFGui::taubinSmoothingCompleted()
 	bool firstSmooth = false;
 	mesh.setFaceColors(cg3::GREY);
 	if (!mw.containsDrawableObject(&originalMesh)){
-		originalMesh = mesh;
+		originalMesh = hfEngine->originalMesh();
 		originalMesh.update();
 		mw.pushDrawableObject(&originalMesh, "Non-Smoothed Mesh", false);
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
@@ -789,6 +836,7 @@ void HFGui::taubinSmoothingCompleted()
 	mesh = hfEngine->mesh();
 	mesh.setFaceFlags(0);
 	mesh.setFaceColors(cg3::GREY);
+	mesh.rotate(actualRotationMatrix);
 	mesh.update();
 	colorTestMesh();
 	treeMesh = cg3::cgal::AABBTree3(mesh);
@@ -849,27 +897,6 @@ void HFGui::on_mzTestRadioButton_toggled(bool checked)
 
 void HFGui::on_preProcessingNextPushButton_clicked()
 {	
-	if (ui->manualOrientationRadioButton->isChecked()){
-		QMessageBox* box = new QMessageBox(&mw);
-		box->setWindowTitle("Rotation Mode");
-		box->setText("You are in manual rotation mode.\n"
-					 "Do you want to keep the actual rotation?");
-		box->addButton(QMessageBox::Ok);
-		box->button(QMessageBox::Ok)->setText("Keep Rotation");
-		box->addButton(QMessageBox::Cancel);
-		box->button(QMessageBox::Cancel)->setText("Discard Rotation");
-		box->setEscapeButton(QMessageBox::Cancel);
-		box->setDefaultButton(QMessageBox::Ok);
-		int ret = box->exec();
-		if (ret == QMessageBox::Ok){
-			Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
-			addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
-			actualRotationMatrix *= rot;
-			mesh.rotate(rot);
-			treeMesh = cg3::cgal::AABBTree3(mesh);
-			ui->automaticOrientationRadioButton->toggle();
-		}
-	}
 	ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
 	box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
 	mw.pushDrawableObject(&box, "box");
@@ -888,37 +915,6 @@ void HFGui::on_preProcessingNextPushButton_clicked()
 	mw.canvas.update();
 }
 
-void HFGui::on_automaticOrientationRadioButton_toggled(bool checked)
-{
-	if (checked){
-		ui->optimalOrientationPushButton->setEnabled(true);
-		ui->nDirsSpinBox->setEnabled(true);
-		ui->resetRotationPushButton->setEnabled(false);
-		ui->manualOrientationDonePushButton->setEnabled(false);
-		ui->taubinSmoothingPushButton->setEnabled(true);
-
-		mw.setDrawableObjectVisibility(&mesh, true);
-		mw.deleteDrawableObject(&rotatableMesh);
-		mw.canvas.update();
-	}
-}
-
-void HFGui::on_manualOrientationRadioButton_toggled(bool checked)
-{
-	if (checked){
-		ui->optimalOrientationPushButton->setEnabled(false);
-		ui->nDirsSpinBox->setEnabled(false);
-		ui->resetRotationPushButton->setEnabled(true);
-		ui->manualOrientationDonePushButton->setEnabled(true);
-		ui->taubinSmoothingPushButton->setEnabled(false);
-
-		mw.setDrawableObjectVisibility(&mesh, false);
-		rotatableMesh.setMesh(mesh);
-		mw.pushDrawableObject(&rotatableMesh, "Rot");
-		mw.canvas.update();
-	}
-}
-
 void HFGui::on_optimalOrientationPushButton_clicked()
 {
 	startWork();
@@ -935,24 +931,6 @@ void HFGui::optimalOrientationCompleted(Eigen::Matrix3d rot)
 	mw.canvas.update();
 	guides.setBoundingBox(mesh.boundingBox());
 	endWork();
-}
-
-void HFGui::on_resetRotationPushButton_clicked()
-{
-	rotatableMesh.resetRotation();
-	mw.canvas.update();
-}
-
-void HFGui::on_manualOrientationDonePushButton_clicked()
-{
-	Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
-	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
-	actualRotationMatrix *= rot;
-	mesh.rotate(rot);
-	colorTestMesh();
-	treeMesh = cg3::cgal::AABBTree3(mesh);
-	mw.canvas.update();
-	ui->automaticOrientationRadioButton->toggle();
 }
 
 void HFGui::on_pxRadioButton_toggled(bool checked)
@@ -1184,6 +1162,7 @@ void HFGui::finishDecomposition()
 {
 	addAction(UserAction(1, 2));
 	changeTab(2);
+	mw.setRotationButton(false);
 
 	if (mw.containsDrawableObject(&originalMesh)){
 		ui->restoreHighFrequenciesPushButton->setEnabled(true);
@@ -1286,6 +1265,8 @@ void HFGui::on_clearPackingPushButton_clicked()
 	packing.clear();
 	mw.deleteDrawableObject(&packing);
 	ui->clearPackingPushButton->setEnabled(false);
+	mw.setSavePackingButtons(false);
+	mw.setSaved(false);
 	mw.canvas.update();
 }
 

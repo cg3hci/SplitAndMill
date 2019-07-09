@@ -9,5 +9,8 @@
         <file>save-document-packing.png</file>
         <file>axis.png</file>
         <file>box.png</file>
+        <file>ortho.png</file>
+        <file>rotation.png</file>
+        <file>reset_rotation.png</file>
     </qresource>
 </RCC>

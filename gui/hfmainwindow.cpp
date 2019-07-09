@@ -92,11 +92,7 @@ void HFMainWindow::setWidget(HFGui *frame)
 
 void HFMainWindow::setLoadedButtons(bool b)
 {
-	//ui->actionLoad_Mesh->setEnabled(!b);
-	//ui->actionLoad_HFD_Project->setEnabled(!b);
 	ui->actionSave_HFD_Project->setEnabled(b);
-	//ui->loadToolButton->setEnabled(!b);
-	//ui->loadHFDToolButton->setEnabled(!b);
 	ui->saveHFDToolButton->setEnabled(b);
 	setSaveDecompositionButtons(b && hfFrame->decompositionComputed());
 	setSavePackingButtons(b && hfFrame->packingComputed());
@@ -126,6 +122,11 @@ void HFMainWindow::setSaved(bool b)
 	else {
 		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname) + "*");
 	}
+}
+
+void HFMainWindow::setRotationButton(bool b)
+{
+	ui->rotationToolButton->setEnabled(b);
 }
 
 /**
@@ -419,6 +420,7 @@ void HFMainWindow::on_actionLoad_Mesh_triggered()
 	}
 	if (load){
 		bool b = hfFrame->loadMesh();
+		setRotationButton(b);
 		setLoadedButtons(b);
 	}
 }
@@ -607,6 +609,12 @@ void HFMainWindow::on_savePackingToolButton_clicked()
 	ui->actionSave_Packing->trigger();
 }
 
+void HFMainWindow::on_orthoToolButton_toggled(bool b)
+{
+	if (b != ui->glCanvas->isOrthographicCamera())
+		ui->actionPerspective_Orthographic_Camera_Mode->trigger();
+}
+
 void HFMainWindow::on_showAxisToolButton_toggled(bool b)
 {
 	if (b != ui->glCanvas->axisIsDrawn())
@@ -617,6 +625,19 @@ void HFMainWindow::on_showBoxToolButton_toggled(bool b)
 {
 	if (b != hfFrame->boxIsDrawn())
 		ui->actionShow_Box->trigger();
+}
+
+void HFMainWindow::on_rotationToolButton_toggled(bool b)
+{
+	hfFrame->enableManualRotation(b);
+	ui->resetRotationToolButton->setEnabled(b);
+}
+
+void HFMainWindow::on_resetRotationToolButton_clicked()
+{
+	hfFrame->resetRotation();
+	ui->rotationToolButton->toggle();
+	ui->resetRotationToolButton->setEnabled(false);
 }
 
 void HFMainWindow::closeEvent(QCloseEvent *event)

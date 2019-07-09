@@ -86,6 +86,7 @@ public:
 	void setSaveDecompositionButtons(bool b);
 	void setSavePackingButtons(bool b);
 	void setSaved(bool b);
+	void setRotationButton(bool b);
 
     //Canvas:
     cg3::Point2i canvasSize() const;
@@ -178,8 +179,11 @@ private slots:
 	void on_saveHFDToolButton_clicked();
 	void on_saveDecompositionToolButton_clicked();
 	void on_savePackingToolButton_clicked();
+	void on_orthoToolButton_toggled(bool b);
 	void on_showAxisToolButton_toggled(bool b);
 	void on_showBoxToolButton_toggled(bool b);
+	void on_rotationToolButton_toggled(bool b);
+	void on_resetRotationToolButton_clicked();
 
 	// QWidget interface
 protected:
