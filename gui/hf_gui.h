@@ -84,6 +84,7 @@ private slots:
 	void undo();
 	void redo();
 	void setProgressBarValue(uint value);
+	void setUpSignals();
 
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();

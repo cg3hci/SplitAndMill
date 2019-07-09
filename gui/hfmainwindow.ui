@@ -54,11 +54,11 @@
     </property>
     <addaction name="actionChange_Background_Color"/>
     <addaction name="actionFit_Scene"/>
+    <addaction name="actionUpdate_Canvas"/>
     <addaction name="actionReset_Point_of_View"/>
     <addaction name="actionPerspective_Orthographic_Camera_Mode"/>
     <addaction name="actionShow_Axis"/>
     <addaction name="actionShow_Box"/>
-    <addaction name="actionUpdate_Canvas"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">

@@ -18,6 +18,7 @@ class HFEngineThread  : public QObject, public HFEngine
 	QThread workerThread;
 public:
 	HFEngineThread();
+	HFEngineThread(const HFEngine& he);
 
 public slots:
 	void taubinSmoothing(uint nIt, double lambda, double mu);

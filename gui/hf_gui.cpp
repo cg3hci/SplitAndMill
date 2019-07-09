@@ -69,47 +69,7 @@ HFGui::HFGui(QWidget *parent) :
 	qRegisterMetaType<cg3::BoundingBox3>("cg3::BoundingBox3");
 	qRegisterMetaType<cg3::BoundingBox3>("cg3::Point2d");
 
-	connect(hfEngine, SIGNAL(setProgressBarValue(uint)),
-			this, SLOT(setProgressBarValue(uint)));
-
-	connect(this, SIGNAL(taubinSmoothing(uint, double, double)),
-			hfEngine, SLOT(taubinSmoothing(uint, double, double)));
-
-	connect(hfEngine, SIGNAL(taubinSmoothingCompleted()),
-			this, SLOT(taubinSmoothingCompleted()));
-
-	connect(this, SIGNAL(optimalOrientation(uint)),
-			hfEngine, SLOT(optimalOrientation(uint)));
-
-	connect(hfEngine, SIGNAL(optimalOrientationCompleted(Eigen::Matrix3d)),
-			this, SLOT(optimalOrientationCompleted(Eigen::Matrix3d)));
-
-	connect(this, SIGNAL(cut(cg3::Dcel, HFBox)),
-			hfEngine, SLOT(cut(cg3::Dcel, HFBox)));
-
-	connect(hfEngine, SIGNAL(cutCompleted(cg3::Dcel)),
-			this, SLOT(cutCompleted(cg3::Dcel)));
-
-	connect(this, SIGNAL(restoreHighFrequencies(uint, double)),
-			hfEngine, SLOT(restoreHighFrequencies(uint, double)));
-
-	connect(hfEngine, SIGNAL(restoreHighFrequenciesCompleted()),
-			this, SLOT(restoreHighFrequenciesCompleted()));
-
-	connect(this, SIGNAL(computeDecomposition()),
-			hfEngine, SLOT(computeDecomposition()));
-
-	connect(this, SIGNAL(computeDecompositionExact()),
-			hfEngine, SLOT(computeDecompositionExact()));
-
-	connect(hfEngine, SIGNAL(computeDecompositionCompleted()),
-			this, SLOT(computeDecompositionCompleted()));
-
-	connect(this, SIGNAL(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)),
-			hfEngine, SLOT(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)));
-
-	connect(hfEngine, SIGNAL(computeOneStockPackingFromDecompositionCompleted(bool)),
-			this, SLOT(computeOneStockPackingFromDecompositionCompleted(bool)));
+	setUpSignals();
 
 	workerThread.start();
 
@@ -165,9 +125,12 @@ bool HFGui::loadHFD(std::string& filename)
 		if (myfile.is_open()){
 			startWork();
 			clear();
+			//workerThread.quit();
+			//workerThread.wait();
 			uint v;
 			cg3::deserialize(v, myfile);
-			cg3::deserializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
+			HFEngine tmphe;
+			cg3::deserializeObjectAttributes("HFD", myfile, tmphe, actualTab, mesh, actualRotationMatrix,
 										   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
 			if (v < 2){
 				if (actualTab > 0)
@@ -179,6 +142,12 @@ bool HFGui::loadHFD(std::string& filename)
 				ui->lightToleranceSpinBox->setValue(lightAngle);
 				ui->flipAngleSpinBox->setValue(flipAngle);
 			}
+
+			delete hfEngine;
+			hfEngine = new HFEngineThread(tmphe);
+			hfEngine->moveToThread(&workerThread);
+			setUpSignals();
+			//workerThread.start();
 			myfile.close();
 			afterLoadHFD();
 			filename = tmp;
@@ -280,7 +249,7 @@ bool HFGui::saveHFDAs(std::string& filename)
 		myfile.open (tmp, std::ios::out | std::ios::binary);
 		if (myfile.is_open()){
 			cg3::serialize(version, myfile);
-			cg3::serializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
+			cg3::serializeObjectAttributes("HFD", myfile, *hfEngine, actualTab, mesh, actualRotationMatrix,
 										   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
 			int lightAngle = ui->lightToleranceSpinBox->value(), flipAngle = ui->flipAngleSpinBox->value();
 			cg3::serializeObjectAttributes("angles", myfile, lightAngle, flipAngle);
@@ -751,6 +720,51 @@ void HFGui::redo()
 void HFGui::setProgressBarValue(uint value)
 {
 	ui->progressBar->setValue(value);
+}
+
+void HFGui::setUpSignals()
+{
+	connect(hfEngine, SIGNAL(setProgressBarValue(uint)),
+			this, SLOT(setProgressBarValue(uint)));
+
+	connect(this, SIGNAL(taubinSmoothing(uint, double, double)),
+			hfEngine, SLOT(taubinSmoothing(uint, double, double)));
+
+	connect(hfEngine, SIGNAL(taubinSmoothingCompleted()),
+			this, SLOT(taubinSmoothingCompleted()));
+
+	connect(this, SIGNAL(optimalOrientation(uint)),
+			hfEngine, SLOT(optimalOrientation(uint)));
+
+	connect(hfEngine, SIGNAL(optimalOrientationCompleted(Eigen::Matrix3d)),
+			this, SLOT(optimalOrientationCompleted(Eigen::Matrix3d)));
+
+	connect(this, SIGNAL(cut(cg3::Dcel, HFBox)),
+			hfEngine, SLOT(cut(cg3::Dcel, HFBox)));
+
+	connect(hfEngine, SIGNAL(cutCompleted(cg3::Dcel)),
+			this, SLOT(cutCompleted(cg3::Dcel)));
+
+	connect(this, SIGNAL(restoreHighFrequencies(uint, double)),
+			hfEngine, SLOT(restoreHighFrequencies(uint, double)));
+
+	connect(hfEngine, SIGNAL(restoreHighFrequenciesCompleted()),
+			this, SLOT(restoreHighFrequenciesCompleted()));
+
+	connect(this, SIGNAL(computeDecomposition()),
+			hfEngine, SLOT(computeDecomposition()));
+
+	connect(this, SIGNAL(computeDecompositionExact()),
+			hfEngine, SLOT(computeDecompositionExact()));
+
+	connect(hfEngine, SIGNAL(computeDecompositionCompleted()),
+			this, SLOT(computeDecompositionCompleted()));
+
+	connect(this, SIGNAL(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)),
+			hfEngine, SLOT(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)));
+
+	connect(hfEngine, SIGNAL(computeOneStockPackingFromDecompositionCompleted(bool)),
+			this, SLOT(computeOneStockPackingFromDecompositionCompleted(bool)));
 }
 
 void HFGui::on_taubinSmoothingPushButton_clicked()

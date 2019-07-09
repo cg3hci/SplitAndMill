@@ -16,6 +16,11 @@ HFEngineThread::HFEngineThread()
 {
 }
 
+HFEngineThread::HFEngineThread(const HFEngine &he) :
+	HFEngine(he)
+{
+}
+
 void HFEngineThread::taubinSmoothing(uint nIt, double lambda, double mu)
 {
 	HFEngine::taubinSmoothing(nIt, lambda, mu);
