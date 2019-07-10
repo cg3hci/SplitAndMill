@@ -218,8 +218,8 @@ std::vector< std::vector<std::pair<int, cg3::Point3d> > > packing(const std::vec
 		if (actualPack.size() > 0)
 			packs.push_back(actualPack);
 	}
-	if (unpackedBlocks.size() > 0)
-		std::cerr << "Some pieces cannot be putted on a pack with the given sizes\n";
+	//if (unpackedBlocks.size() > 0)
+	//	std::cerr << "Some pieces cannot be putted on a pack with the given sizes\n";
 	return packs;
 }
 

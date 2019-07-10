@@ -400,11 +400,40 @@ std::map< const cg3::Dcel::Vertex*, int > HFEngine::mappingVertexToBlock(const c
 	return mapping;
 }
 
+std::vector<cg3::Dcel> HFEngine::rotateAllBlocks()
+{
+	std::vector<cg3::Dcel> decomposition = _decomposition;
+	for (unsigned int i = 0; i < _boxes.size(); i++){
+		cg3::Vec3d normal = cg3::AXIS[_boxes[i].millingDirection()];
+		for (uint k = 0; rotHistory[k].first <= i; ++k){
+			normal.rotate(rotHistory[k].second.transpose());
+			normal.normalize();
+		}
+		//normal.rotate(_boxes[i].rotationMatrix().transpose());
+		cg3::Vec3d axis = normal.cross(cg3::Z_AXIS);
+		axis.normalize();
+		double dot = normal.dot(cg3::Z_AXIS);
+		double angle = acos(dot);
+
+		Eigen::Matrix3d r = Eigen::Matrix3d::Identity();
+		if (normal != cg3::Z_AXIS){
+			if (normal == -cg3::Z_AXIS){
+				axis = cg3::Vec3d(1,0,0);
+			}
+			cg3::rotationMatrix(axis, angle, r);
+		}
+		decomposition[i].rotate(r);
+		decomposition[i].updateBoundingBox();
+
+		decomposition[i].translate(cg3::Point3d(0,0,-decomposition[i].boundingBox().min().z()));
+	}
+	return decomposition;
+}
+
 std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor)
 {
 	//rotation
-	std::vector<cg3::Dcel> tmpPacking = _decomposition;
-	packing::rotateAllBlocks(_boxes, tmpPacking);
+	std::vector<cg3::Dcel> tmpPacking = rotateAllBlocks();
 
 	//scaling
 	cg3::BoundingBox3 actualStock(stock.min(), cg3::Point3d(stock.maxX()-clearnessStock.x(), stock.maxY()-clearnessStock.x(), stock.maxZ()-clearnessStock.y()));

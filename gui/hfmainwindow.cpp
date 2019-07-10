@@ -469,7 +469,7 @@ void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 
 void HFMainWindow::on_actionSave_HFD_Project_triggered()
 {
-	if (fileHFD != "")
+	if (fileHFD == "")
 		ui->actionSave_HFD_Project_As->trigger();
 	else{
 		bool b = hfFrame->saveHFD(fileHFD);

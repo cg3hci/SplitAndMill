@@ -63,6 +63,7 @@ protected:
 	std::vector<std::vector<cg3::Dcel>> _packing;
 	std::vector<HFBox> restoreHighFrequenciesBoxes() const;
 	std::map<const cg3::Dcel::Vertex *, int> mappingVertexToBlock(const cg3::cgal::AABBTree3 &tree);
+	std::vector<cg3::Dcel> rotateAllBlocks();
 	std::vector<cg3::Dcel> packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor = 1);
 	void setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double factor, const cg3::BoundingBox3 &stock, const std::vector<std::pair<int, cg3::Point3d> > &pack);
 };
