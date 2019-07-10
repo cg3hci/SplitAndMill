@@ -404,25 +404,28 @@ std::vector<cg3::Dcel> HFEngine::rotateAllBlocks()
 {
 	std::vector<cg3::Dcel> decomposition = _decomposition;
 	for (unsigned int i = 0; i < _boxes.size(); i++){
+		uint r=0;
+		while (r < rotHistory.size() && rotHistory[r].first <= i){
+			++r;
+		}
 		cg3::Vec3d normal = cg3::AXIS[_boxes[i].millingDirection()];
-		for (uint k = 0; rotHistory[k].first <= i; ++k){
-			normal.rotate(rotHistory[k].second.transpose());
+		for (int rr = r-1; rr >= 0; rr--){ //order is important here
+			normal.rotate(rotHistory[rr].second.transpose());
 			normal.normalize();
 		}
-		//normal.rotate(_boxes[i].rotationMatrix().transpose());
 		cg3::Vec3d axis = normal.cross(cg3::Z_AXIS);
 		axis.normalize();
 		double dot = normal.dot(cg3::Z_AXIS);
 		double angle = acos(dot);
 
-		Eigen::Matrix3d r = Eigen::Matrix3d::Identity();
+		Eigen::Matrix3d m = Eigen::Matrix3d::Identity();
 		if (normal != cg3::Z_AXIS){
 			if (normal == -cg3::Z_AXIS){
 				axis = cg3::Vec3d(1,0,0);
 			}
-			cg3::rotationMatrix(axis, angle, r);
+			cg3::rotationMatrix(axis, angle, m);
 		}
-		decomposition[i].rotate(r);
+		decomposition[i].rotate(m);
 		decomposition[i].updateBoundingBox();
 
 		decomposition[i].translate(cg3::Point3d(0,0,-decomposition[i].boundingBox().min().z()));

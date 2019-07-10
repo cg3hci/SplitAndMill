@@ -91,7 +91,7 @@ void HFEngineThread::computeDecomposition()
 
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
 		cg3::SimpleEigenMesh res = cg3::libigl::intersection(m, box);
-		for (int rr = r-1; rr >= 0; rr--)
+		for (int rr = r-1; rr >= 0; rr--) //order is important here
 			res.rotate(rotHistory[rr].second.transpose());
 		_decomposition.push_back(res);
 		m = cg3::libigl::difference(m, box);
@@ -126,7 +126,7 @@ void HFEngineThread::computeDecompositionExact()
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
 		cg3::libigl::CSGTree treebox = cg3::libigl::eigenMeshToCSGTree(box);
 		cg3::SimpleEigenMesh res = cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(tree, treebox));
-		for (int rr = r-1; rr >= 0; rr--)
+		for (int rr = r-1; rr >= 0; rr--) //order is important here
 			res.rotate(rotHistory[rr].second.transpose());
 		_decomposition.push_back(res);
 		tree = cg3::libigl::difference(tree, treebox);

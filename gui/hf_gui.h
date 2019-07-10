@@ -214,9 +214,7 @@ private:
 	std::vector<UserAction> actions;
 	uint actualAction;
 
-	std::vector<cg3::Dcel> tmpPacking;
 	const uint version = 2;
-
 };
 
 #endif // CG3_EXAMPLE_MANAGER_H
