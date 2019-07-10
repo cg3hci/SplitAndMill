@@ -10,48 +10,43 @@ UserAction::UserAction()
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix, const Eigen::Matrix3d &actualRotationMatrix, uint tab) :
+UserAction::UserAction(const cg3::Dcel &mesh, const Eigen::Matrix3d &rotMatrix, const Eigen::Matrix3d &actualRotationMatrix) :
 	actionType(ROTATE),
 	_mesh(mesh),
 	_rotation(rotMatrix),
-	actualRot(actualRotationMatrix),
-	_tab(tab)
+	actualRot(actualRotationMatrix)
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const HFBox &box, uint tab) :
+UserAction::UserAction(const cg3::Dcel &mesh, const HFBox &box) :
 	actionType(CUT),
 	_mesh(mesh),
-	_box(box),
-	_tab(tab)
+	_box(box)
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel& smoothedMesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab) :
+UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel& smoothedMesh, uint nIters, double lambda, double mu, bool firstSmooth) :
 	actionType(SMOOTHING),
 	_mesh(mesh),
 	_restoredMesh(smoothedMesh),
 	_lambda(lambda),
 	_mu(mu),
 	nIt(nIters),
-	firstSmooth(firstSmooth),
-	_tab(tab)
+	firstSmooth(firstSmooth)
 {
 }
 
-UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel &restoredMesh, uint nIters, uint tab) :
+UserAction::UserAction(const cg3::Dcel &mesh, const cg3::Dcel &restoredMesh, uint nIters) :
 	actionType(RESTORE_HIGH_FREQ),
 	_mesh(mesh),
 	_restoredMesh(restoredMesh),
-	nIt(nIters),
-	_tab(tab)
+	nIt(nIters)
 {
 }
 
-UserAction::UserAction(const std::vector<cg3::Dcel> &decomposition, uint tab) :
+UserAction::UserAction(const std::vector<cg3::Dcel> &decomposition) :
 	actionType(DECOMPOSITION),
-	_decomposition(decomposition),
-	_tab(tab)
+	_decomposition(decomposition)
 {
 }
 
@@ -115,11 +110,6 @@ Eigen::Matrix3d UserAction::actualRotationMatrix() const
 HFBox UserAction::box() const
 {
 	return _box;
-}
-
-uint UserAction::tab() const
-{
-	return _tab;
 }
 
 uint UserAction::fromTab() const

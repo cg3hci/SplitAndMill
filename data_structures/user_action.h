@@ -15,11 +15,11 @@ class UserAction
 public:
 	UserAction();
 
-	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix, const Eigen::Matrix3d& actualRotationMatrix, uint tab);
-	UserAction(const cg3::Dcel& mesh, const HFBox& box, uint tab);
-	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& smoothedMesh, uint nIters, double lambda, double mu, bool firstSmooth, uint tab);
-	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& restoredMesh, uint nIters, uint tab);
-	UserAction(const std::vector<cg3::Dcel>& decomposition, uint tab);
+	UserAction(const cg3::Dcel& mesh, const Eigen::Matrix3d& rotMatrix, const Eigen::Matrix3d& actualRotationMatrix);
+	UserAction(const cg3::Dcel& mesh, const HFBox& box);
+	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& smoothedMesh, uint nIters, double lambda, double mu, bool firstSmooth);
+	UserAction(const cg3::Dcel& mesh, const cg3::Dcel& restoredMesh, uint nIters);
+	UserAction(const std::vector<cg3::Dcel>& decomposition);
 	UserAction(uint fromTab, uint toTab);
 
 
@@ -36,7 +36,6 @@ public:
 	Eigen::Matrix3d rotationMatrix() const;
 	Eigen::Matrix3d actualRotationMatrix() const;
 	HFBox box() const;
-	uint tab() const;
 	uint fromTab() const;
 	uint toTab() const;
 	const std::vector<cg3::Dcel>& decomposition();

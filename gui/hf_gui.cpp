@@ -144,6 +144,8 @@ bool HFGui::loadHFD(std::string& filename)
 			delete hfEngine;
 			hfEngine = new HFEngineThread(tmphe);
 			hfEngine->moveToThread(&workerThread);
+			if (hfEngine->rotationHistory().size() == 0)
+				hfEngine->pushRotation(0, actualRotationMatrix);
 			setUpSignals();
 			//workerThread.start();
 			myfile.close();
@@ -185,6 +187,7 @@ void HFGui::afterLoadHFD()
 
 	if (actualTab == 1){
 		box.set(mesh.boundingBox().min(), mesh.boundingBox().max());
+		box.setDrawArrow(true);
 		mw.pushDrawableObject(&box, "box");
 	}
 	if (actualTab == 2){
@@ -353,8 +356,9 @@ void HFGui::enableManualRotation(bool b)
 	else {
 		if (mw.containsDrawableObject(&rotatableMesh)){ //manage reset button
 			Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
-			addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
+			addAction(UserAction(mesh, rot, actualRotationMatrix));
 			actualRotationMatrix *= rot;
+			hfEngine->pushRotation(rot);
 			mesh.rotate(rot);
 			mesh.update();
 			treeMesh = cg3::cgal::AABBTree3(mesh);
@@ -605,6 +609,7 @@ void HFGui::undoRotate()
 {
 	mesh = actions[actualAction].mesh();
 	actualRotationMatrix = actions[actualAction].actualRotationMatrix(); //avoid numerical errors
+	hfEngine->popRotation();
 	colorTestMesh();
 	mesh.update();
 	mw.refreshDrawableObject(&mesh);
@@ -616,6 +621,7 @@ void HFGui::redoRotate()
 {
 	Eigen::Matrix3d rot = actions[actualAction].rotationMatrix();
 	actualRotationMatrix *= rot;
+	hfEngine->pushRotation(rot);
 	mesh.rotate(rot);
 	colorTestMesh();
 	mesh.update();
@@ -635,7 +641,6 @@ void HFGui::undoCut()
 	mw.pushDrawableObject(&box, "Box");
 	mw.deleteDrawableObject(&hfDecomposition);
 	updateSurfaceAndvolume();
-	changeTab(actions[actualAction].tab());
 	guides.popGuide();
 	guides.popGuide();
 	ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
@@ -832,7 +837,7 @@ void HFGui::taubinSmoothingCompleted()
 		mw.setDrawableObjectName(&mesh, "Smoothed Mesh");
 		firstSmooth = true;
 	}
-	addAction(UserAction(mesh, hfEngine->mesh(), ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth, actualTab));
+	addAction(UserAction(mesh, hfEngine->mesh(), ui->nIterationsSpinBox->value(), ui->lambdaSpinBox->value(), ui->muSpinBox->value(), firstSmooth));
 	mesh = hfEngine->mesh();
 	mesh.setFaceFlags(0);
 	mesh.setFaceColors(cg3::GREY);
@@ -923,7 +928,8 @@ void HFGui::on_optimalOrientationPushButton_clicked()
 
 void HFGui::optimalOrientationCompleted(Eigen::Matrix3d rot)
 {
-	addAction(UserAction(mesh, rot, actualRotationMatrix, actualTab));
+	addAction(UserAction(mesh, rot, actualRotationMatrix));
+	hfEngine->pushRotation(rot);
 	actualRotationMatrix *= rot;
 	mesh.rotate(rot);
 	colorTestMesh();
@@ -1059,7 +1065,7 @@ void HFGui::startCut()
 
 	HFBox hfbox(box.min(), box.max(), box.millingDirection(), actualRotationMatrix);
 	hfEngine->pushBox(hfbox);
-	addAction(UserAction(mesh, hfbox, actualTab));
+	addAction(UserAction(mesh, hfbox));
 
 	ui->nBoxesLabel->setText(QString::number(hfEngine->boxes().size()));
 
@@ -1193,7 +1199,7 @@ void HFGui::on_restoreHighFrequenciesPushButton_clicked()
 
 void HFGui::restoreHighFrequenciesCompleted()
 {
-	addAction(UserAction(mesh, hfEngine->mesh(), ui->nRestoreIterationsSpinBox->value(), actualTab));
+	addAction(UserAction(mesh, hfEngine->mesh(), ui->nRestoreIterationsSpinBox->value()));
 	mesh = hfEngine->mesh();
 	mw.refreshDrawableObject(&mesh);
 	ui->hausdorffDistanceLabel->setText(QString::fromStdString(std::to_string(hfEngine->hausdorffDistance())));
@@ -1214,7 +1220,7 @@ void HFGui::on_computeDecompositionPushButton_clicked()
 
 void HFGui::computeDecompositionCompleted()
 {
-	addAction(UserAction(hfEngine->decomposition(), actualTab));
+	addAction(UserAction(hfEngine->decomposition()));
 	uint i = 0;
 	hfDecomposition.clear();
 	for (const cg3::Dcel& d : hfEngine->decomposition())

@@ -22,6 +22,10 @@ public:
 	virtual Eigen::Matrix3d optimalOrientation(uint nDirs);
 	virtual void taubinSmoothing(uint nIt, double lambda, double mu);
 	bool usesSmoothedMesh() const;
+	void pushRotation(const Eigen::Matrix3d& rot);
+	void pushRotation(uint nBoxes, const Eigen::Matrix3d& rot);
+	void popRotation();
+	const std::vector<std::pair<uint, Eigen::Matrix3d>>& rotationHistory();
 	void pushBox(const HFBox& box);
 	void popBox();
 	const std::vector<HFBox>& boxes() const;
@@ -52,6 +56,8 @@ protected:
 	cg3::Dcel _mesh;
 	cg3::Dcel _originalMesh;
 	bool useSmoothedMesh;
+	std::vector<std::pair<uint, Eigen::Matrix3d>> rotHistory;
+	//history of rotations here
 	std::vector<HFBox> _boxes;
 	std::vector<cg3::Dcel> _decomposition;
 	std::vector<std::vector<cg3::Dcel>> _packing;

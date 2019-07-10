@@ -71,6 +71,26 @@ bool HFEngine::usesSmoothedMesh() const
 	return useSmoothedMesh;
 }
 
+void HFEngine::pushRotation(const Eigen::Matrix3d &rot)
+{
+	rotHistory.push_back(std::make_pair(_boxes.size(), rot));
+}
+
+void HFEngine::pushRotation(uint nBoxes, const Eigen::Matrix3d &rot)
+{
+	rotHistory.push_back(std::make_pair(nBoxes, rot));
+}
+
+void HFEngine::popRotation()
+{
+	rotHistory.pop_back();
+}
+
+const std::vector<std::pair<uint, Eigen::Matrix3d> > &HFEngine::rotationHistory()
+{
+	return rotHistory;
+}
+
 void HFEngine::pushBox(const HFBox &box)
 {
 	_boxes.push_back(box);
@@ -101,45 +121,60 @@ double HFEngine::hausdorffDistance() const
 void HFEngine::computeDecomposition()
 {
 	_decomposition.clear();
-	Eigen::Matrix3d rot = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
+
+	uint i = 0, r = 0;
+
 	cg3::SimpleEigenMesh m = _mesh;
+
 	for (const HFBox& b : _boxes){
-		if (b.rotationMatrix() != rot){
-			rot = b.rotationMatrix();
-			m.rotate(rot);
+		while (r < rotHistory.size() && rotHistory[r].first <= i){
+			m.rotate(rotHistory[r].second);
+			++r;
 		}
+
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
 		cg3::SimpleEigenMesh res = cg3::libigl::intersection(m, box);
-		res.rotate(rot.transpose());
+		for (int rr = r-1; rr >= 0; rr--)
+			res.rotate(rotHistory[rr].second.transpose());
 		_decomposition.push_back(res);
 		m = cg3::libigl::difference(m, box);
+
+		i++;
 	}
+
+	colorDecomposition();
 }
 
 void HFEngine::computeDecompositionExact()
 {
-	Eigen::Matrix3d rtmp = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
 	cg3::libigl::CSGTree::MatrixX3E rot = Eigen::Matrix<cg3::libigl::CSGTree::ExactScalar,3,3>::Identity();
+
+	uint i = 0, r = 0;
 
 	cg3::libigl::CSGTree tree = cg3::libigl::eigenMeshToCSGTree(_mesh);
 	for (const HFBox& b : _boxes){
-		if (b.rotationMatrix() != rtmp){
-			rtmp = b.rotationMatrix();
-			rot = b.rotationMatrix().template cast<cg3::libigl::CSGTree::ExactScalar>();
+		while (r < rotHistory.size() && rotHistory[r].first <= i){
+			rot = rotHistory[r].second.template cast<cg3::libigl::CSGTree::ExactScalar>();
 			auto V = tree.V();
 			for (unsigned int i = 0; i < V.rows(); i++){
 				V.row(i) =  rot * V.row(i).transpose();
 			}
 			tree = cg3::libigl::CSGTree(V, tree.F());
+			++r;
 		}
 
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
 		cg3::libigl::CSGTree treebox = cg3::libigl::eigenMeshToCSGTree(box);
 		cg3::SimpleEigenMesh res = cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(tree, treebox));
-		res.rotate(rtmp.transpose());
+		for (int rr = r-1; rr >= 0; rr--)
+			res.rotate(rotHistory[rr].second.transpose());
 		_decomposition.push_back(res);
 		tree = cg3::libigl::difference(tree, treebox);
+
+		i++;
 	}
+
+	colorDecomposition();
 }
 
 void HFEngine::colorDecomposition()
@@ -301,11 +336,18 @@ cg3::Dcel HFEngine::originalMesh() const
 void HFEngine::serialize(std::ofstream &binaryFile) const
 {
 	cg3::serializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition, _packing);
+	cg3::serialize(rotHistory, binaryFile);
 }
 
 void HFEngine::deserialize(std::ifstream &binaryFile)
 {
 	cg3::deserializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition, _packing);
+
+	try {
+		cg3::deserialize(rotHistory, binaryFile);
+	} catch (std::ios_base::failure&) {
+
+	}
 }
 
 std::vector<HFBox> HFEngine::restoreHighFrequenciesBoxes() const

@@ -77,22 +77,22 @@ void HFEngineThread::restoreHighFrequencies(uint nIterations, double flipAngle)
 void HFEngineThread::computeDecomposition()
 {
 	_decomposition.clear();
-	Eigen::Matrix3d rot = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
 
-	uint i = 0;
+	uint i = 0, r = 0;
 	uint nBoxes = _boxes.size();
 
 	cg3::SimpleEigenMesh m = _mesh;
+
 	for (const HFBox& b : _boxes){
-		if (b.rotationMatrix() != rot){
-			rot = b.rotationMatrix();
-			m.rotate(rot);
+		while (r < rotHistory.size() && rotHistory[r].first <= i){
+			m.rotate(rotHistory[r].second);
+			++r;
 		}
 
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
-		//box.rotate(b.rotationMatrix().transpose());
 		cg3::SimpleEigenMesh res = cg3::libigl::intersection(m, box);
-		res.rotate(rot.transpose());
+		for (int rr = r-1; rr >= 0; rr--)
+			res.rotate(rotHistory[rr].second.transpose());
 		_decomposition.push_back(res);
 		m = cg3::libigl::difference(m, box);
 
@@ -106,29 +106,28 @@ void HFEngineThread::computeDecomposition()
 
 void HFEngineThread::computeDecompositionExact()
 {
-	Eigen::Matrix3d rtmp = Eigen::Matrix3d::Identity(); //to avoid cast differences in comparison
 	cg3::libigl::CSGTree::MatrixX3E rot = Eigen::Matrix<cg3::libigl::CSGTree::ExactScalar,3,3>::Identity();
 
-	uint i = 0;
+	uint i = 0, r = 0;
 	uint nBoxes = _boxes.size();
 
 	cg3::libigl::CSGTree tree = cg3::libigl::eigenMeshToCSGTree(_mesh);
 	for (const HFBox& b : _boxes){
-		if (b.rotationMatrix() != rtmp){
-			rtmp = b.rotationMatrix();
-			rot = b.rotationMatrix().template cast<cg3::libigl::CSGTree::ExactScalar>();
+		while (r < rotHistory.size() && rotHistory[r].first <= i){
+			rot = rotHistory[r].second.template cast<cg3::libigl::CSGTree::ExactScalar>();
 			auto V = tree.V();
 			for (unsigned int i = 0; i < V.rows(); i++){
 				V.row(i) =  rot * V.row(i).transpose();
 			}
 			tree = cg3::libigl::CSGTree(V, tree.F());
+			++r;
 		}
 
 		cg3::SimpleEigenMesh box = cg3::EigenMeshAlgorithms::makeBox(b);
-		//box.rotate(b.rotationMatrix().transpose());
 		cg3::libigl::CSGTree treebox = cg3::libigl::eigenMeshToCSGTree(box);
 		cg3::SimpleEigenMesh res = cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(tree, treebox));
-		res.rotate(rtmp.transpose());
+		for (int rr = r-1; rr >= 0; rr--)
+			res.rotate(rotHistory[rr].second.transpose());
 		_decomposition.push_back(res);
 		tree = cg3::libigl::difference(tree, treebox);
 

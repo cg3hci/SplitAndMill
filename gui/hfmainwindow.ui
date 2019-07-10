@@ -400,6 +400,9 @@
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="toolTip">
+        <string>Rotate Mesh</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -422,6 +425,9 @@
       <widget class="QToolButton" name="resetRotationToolButton">
        <property name="enabled">
         <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Reset Rotation</string>
        </property>
        <property name="text">
         <string>...</string>
