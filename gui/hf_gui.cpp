@@ -394,11 +394,13 @@ void HFGui::clear()
 	mw.canvas.update();
 	guides.clear();
 	packing.clear();
+	actualRotationMatrix = Eigen::Matrix3d::Identity();
 
 	for (uint i = 0; i < NTABS; i++){
 		tabs[i]->setVisible(false);
 		tabLabels[i]->setEnabled(false);
 	}
+	ui->decompositionPrevPushButton->setEnabled(true);
 }
 
 void HFGui::addAction(const UserAction &action)
@@ -437,6 +439,7 @@ void HFGui::changeTab(uint tab)
 		}
 	}
 	tabs[tab]->setVisible(true);
+	tabs[tab]->setEnabled(true);
 	tabLabels[tab]->setEnabled(true);
 	actualTab = tab;
 }
@@ -523,10 +526,19 @@ void HFGui::undoChangeTab()
 		guides.setDrawX(ui->xGuidesCheckBox->isChecked());
 		guides.setDrawY(ui->yGuidesCheckBox->isChecked());
 		guides.setDrawZ(ui->zGuidesCheckBox->isChecked());
+		mesh = hfEngine->baseComplex();
+		mesh.update();
 		break;
 	case 2:
+		mw.deleteDrawableObject(&box);
 		mw.setDrawableObjectVisibility(&hfDecomposition, true);
 		mw.deleteDrawableObject(&stock);
+		mesh = hfEngine->mesh();
+		mesh.update();
+		break;
+	case 3:
+		mw.setDrawableObjectVisibility(&hfDecomposition, false);
+		mw.pushDrawableObject(&stock, "Stock");
 		break;
 	default:
 		assert(0);
@@ -542,13 +554,24 @@ void HFGui::redoChangeTab()
 	else
 		mw.setRotationButton(false);
 	switch(actualTab){
+	case 0:
+		mw.deleteDrawableObject(&box);
+		ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
+		colorTestMesh();
+		break;
 	case 1:
 		ui->testOrTrianglesCheckBox->setCheckState(Qt::Unchecked);
 		colorTestMesh();
 		mw.pushDrawableObject(&box, "Box");
+		mesh = hfEngine->baseComplex();
+		mesh.update();
 		break;
 	case 2:
 		mw.deleteDrawableObject(&box);
+		mw.setDrawableObjectVisibility(&hfDecomposition, true);
+		mw.deleteDrawableObject(&stock);
+		mesh = hfEngine->mesh();
+		mesh.update();
 		break;
 	case 3:
 		mw.setDrawableObjectVisibility(&hfDecomposition, false);
@@ -637,6 +660,8 @@ void HFGui::undoCut()
 	box.set(actions[actualAction].box().min(), actions[actualAction].box().max());
 	box.setMillingDirection(actions[actualAction].box().millingDirection());
 	hfEngine->popBox();
+	hfEngine->baseComplex() = mesh;
+	hfEngine->tmpDecomposition().pop_back();
 	mw.setDrawableObjectVisibility(&mesh, b);
 	mw.pushDrawableObject(&box, "Box");
 	mw.deleteDrawableObject(&hfDecomposition);
@@ -648,6 +673,8 @@ void HFGui::undoCut()
 	mw.refreshDrawableObject(&mesh);
 	treeMesh = cg3::cgal::AABBTree3(mesh);
 	mw.canvas.update();
+	if (hfEngine->boxes().size() == 0)
+		ui->decompositionPrevPushButton->setEnabled(true);
 }
 
 void HFGui::redoCut()
@@ -1053,8 +1080,10 @@ void HFGui::on_cutPushButton_clicked()
 		int ret = box->exec();
 		continueCut = ret == QMessageBox::Ok;
 	}
-	if (continueCut)
+	if (continueCut){
+		ui->decompositionPrevPushButton->setEnabled(false);
 		startCut();
+	}
 }
 
 void HFGui::startCut()
@@ -1141,6 +1170,14 @@ void HFGui::on_snapMaxZPushButton_clicked()
 {
 	cg3::Point3d p = guides.nearest(box.max(), 2);
 	box.setMax(cg3::Point3d(box.max().x(), box.max().y(), p.z()));
+	mw.canvas.update();
+}
+
+void HFGui::on_decompositionPrevPushButton_clicked()
+{
+	addAction(UserAction(1, 0));
+	changeTab(0);
+	mw.deleteDrawableObject(&box);
 	mw.canvas.update();
 }
 
@@ -1233,6 +1270,17 @@ void HFGui::computeDecompositionCompleted()
 	ui->nextPostProcessingPushButton->setEnabled(true);
 	mw.setSaveDecompositionButtons(true);
 	endWork();
+}
+
+void HFGui::on_prevPostProcessingPushButton_clicked()
+{
+	addAction(UserAction(2, 1));
+	changeTab(1);
+	mw.setRotationButton(true);
+	mesh = hfEngine->baseComplex();
+	mw.pushDrawableObject(&box, "Box");
+	mw.refreshDrawableObject(&mesh);
+	mw.canvas.update();
 }
 
 void HFGui::on_nextPostProcessingPushButton_clicked()

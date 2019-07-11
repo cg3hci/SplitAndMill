@@ -41,7 +41,11 @@ void HFEngineThread::cut(cg3::Dcel mesh, HFBox hfbox)
 
 	cg3::BoundingBox3 bb(hfbox.min(), hfbox.max());
 	cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(bb);
+	cg3::Dcel block = cg3::libigl::intersection(mesh, b);
+	//rotation of block....
+	_tmpDecomposition.push_back(block);
 	cg3::Dcel res =cg3::libigl::difference(mesh, b, birthFaces);
+	_baseComplex = res;
 	for (cg3::Dcel::Face* f : res.faceIterator()){
 		if (birthFaces[f->id()] < nFaces){
 			f->setFlag(mesh.face(birthFaces[f->id()])->flag());

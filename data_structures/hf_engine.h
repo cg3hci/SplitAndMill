@@ -34,7 +34,13 @@ public:
 	virtual void computeDecomposition();
 	virtual void computeDecompositionExact();
 	void colorDecomposition();
-	std::vector<cg3::Dcel> decomposition() const;
+
+	const std::vector<cg3::Dcel>& tmpDecomposition() const;
+	std::vector<cg3::Dcel>& tmpDecomposition();
+	const cg3::Dcel& baseComplex() const;
+	cg3::Dcel& baseComplex();
+
+	const std::vector<cg3::Dcel>& decomposition() const;
 	std::vector<cg3::Dcel>& decomposition();
 
 
@@ -59,6 +65,8 @@ protected:
 	std::vector<std::pair<uint, Eigen::Matrix3d>> rotHistory;
 	//history of rotations here
 	std::vector<HFBox> _boxes;
+	std::vector<cg3::Dcel> _tmpDecomposition;
+	cg3::Dcel _baseComplex;
 	std::vector<cg3::Dcel> _decomposition;
 	std::vector<std::vector<cg3::Dcel>> _packing;
 	std::vector<HFBox> restoreHighFrequenciesBoxes() const;

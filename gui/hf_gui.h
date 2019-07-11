@@ -153,6 +153,7 @@ private slots:
 
 	void on_snapMaxZPushButton_clicked();
 
+	void on_decompositionPrevPushButton_clicked();
 	void on_decompositionNextPushButton_clicked();
 	void finishDecomposition();
 
@@ -164,6 +165,7 @@ private slots:
 	void on_computeDecompositionPushButton_clicked();
 	void computeDecompositionCompleted();
 
+	void on_prevPostProcessingPushButton_clicked();
 	void on_nextPostProcessingPushButton_clicked();
 
 	//packing

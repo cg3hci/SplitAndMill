@@ -29,6 +29,8 @@ void HFEngine::clear()
 {
 	useSmoothedMesh = false;
 	_boxes.clear();
+	rotHistory.clear();
+	tmpDecomposition().clear();
 	_decomposition.clear();
 	_packing.clear();
 }
@@ -242,7 +244,27 @@ void HFEngine::colorDecomposition()
 	}
 }
 
-std::vector<cg3::Dcel> HFEngine::decomposition() const
+const std::vector<cg3::Dcel> &HFEngine::tmpDecomposition() const
+{
+	return _tmpDecomposition;
+}
+
+std::vector<cg3::Dcel> &HFEngine::tmpDecomposition()
+{
+	return _tmpDecomposition;
+}
+
+const cg3::Dcel &HFEngine::baseComplex() const
+{
+	return _baseComplex;
+}
+
+cg3::Dcel &HFEngine::baseComplex()
+{
+	return _baseComplex;
+}
+
+const std::vector<cg3::Dcel>& HFEngine::decomposition() const
 {
 	return _decomposition;
 }
@@ -337,6 +359,8 @@ void HFEngine::serialize(std::ofstream &binaryFile) const
 {
 	cg3::serializeObjectAttributes("HFEngine", binaryFile, _mesh, _originalMesh, useSmoothedMesh, _boxes, _decomposition, _packing);
 	cg3::serialize(rotHistory, binaryFile);
+	cg3::serialize(_tmpDecomposition, binaryFile);
+	cg3::serialize(_baseComplex, binaryFile);
 }
 
 void HFEngine::deserialize(std::ifstream &binaryFile)
@@ -345,6 +369,8 @@ void HFEngine::deserialize(std::ifstream &binaryFile)
 
 	try {
 		cg3::deserialize(rotHistory, binaryFile);
+		cg3::deserialize(_tmpDecomposition, binaryFile);
+		cg3::deserialize(_baseComplex, binaryFile);
 	} catch (std::ios_base::failure&) {
 
 	}
