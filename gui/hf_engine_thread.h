@@ -27,12 +27,13 @@ public slots:
 	void restoreHighFrequencies(uint nIterations, double flipAngle);
 	void computeDecomposition();
 	void computeDecompositionExact();
-	bool computeOneStockPackingFromDecomposition(
-			const cg3::BoundingBox3 &stock,
+	bool computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock,
 			double toolLength,
+			cg3::Point2d frameThicknessStock,
+			double zOffset,
 			double distanceBetweenblocks = 5,
 			cg3::Point2d clearnessStock = cg3::Point2d(5, 2),
-			double clearnessTool = 1);
+			double clearnessTool = 1, bool computeNegative = false);
 
 signals:
 	void setProgressBarValue(uint);

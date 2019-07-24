@@ -44,9 +44,19 @@ public:
 	std::vector<cg3::Dcel>& decomposition();
 
 
-	void computePackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1, double factor = 1);
+	void computePackingFromDecomposition(
+			const cg3::BoundingBox3 &stock, double toolLength,
+			const cg3::Point2d& frameThicknessStock, double zOffset,
+			double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2),
+			double clearnessTool = 1, double factor = 1, bool computeNegative = false);
 
-	virtual bool computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distanceBetweenBlocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2), double clearnessTool = 1);
+	virtual bool computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength,
+			cg3::Point2d frameThicknessStock, double zOffset,
+			double distanceBetweenBlocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2),
+			double clearnessTool = 1, bool computeNegative = false);
+
+	cg3::Dcel computeFrameStock(
+			const cg3::BoundingBox3 &stock, cg3::Point2d frameThicknessStock) const;
 
 	std::vector<std::vector<cg3::Dcel> > packing() const;
 	std::vector<std::vector<cg3::Dcel> >& packing();

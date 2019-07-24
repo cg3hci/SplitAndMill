@@ -66,7 +66,7 @@ HFGui::HFGui(QWidget *parent) :
 	qRegisterMetaType<Eigen::Matrix3d>("Eigen::Matrix3d");
 	qRegisterMetaType<HFBox>("HFBox");
 	qRegisterMetaType<cg3::BoundingBox3>("cg3::BoundingBox3");
-	qRegisterMetaType<cg3::BoundingBox3>("cg3::Point2d");
+	qRegisterMetaType<cg3::Point2d>("cg3::Point2d");
 
 	setUpSignals();
 
@@ -273,7 +273,7 @@ bool HFGui::saveHFD(const string &filename)
 	myfile.open (filename, std::ios::out | std::ios::binary);
 	if (myfile.is_open()){
 		cg3::serialize(version, myfile);
-		cg3::serializeObjectAttributes("HFD", myfile, hfEngine, actualTab, mesh, actualRotationMatrix,
+		cg3::serializeObjectAttributes("HFD", myfile, *hfEngine, actualTab, mesh, actualRotationMatrix,
 									   totalSurface, totalVolume, remainingSurface, remainingVolume, stock);
 		int lightAngle = ui->lightToleranceSpinBox->value(), flipAngle = ui->flipAngleSpinBox->value();
 		cg3::serializeObjectAttributes("angles", myfile, lightAngle, flipAngle);
@@ -310,15 +310,18 @@ bool HFGui::savePacking()
 {
 	std::string folder = lsmesh.directoryDialog();
 	if (folder != ""){
+		cg3::Dcel all;
 		stock.saveOnObj(folder + "/stock.obj");
 		uint i = 0;
 		for (const auto& p : packing){
 			uint j = 0;
 			for (const cg3::DrawableDcel& d : p){
+				all.merge((cg3::Dcel&) d);
 				d.saveOnObj(folder + "/stock_" + std::to_string(i) + "_block_" + std::to_string(j++) + ".obj");
 			}
 			i++;
 		}
+		all.saveOnObj(folder + "/all.obj");
 		return true;
 	}
 	return false;
@@ -839,8 +842,8 @@ void HFGui::setUpSignals()
 	connect(hfEngine, SIGNAL(computeDecompositionCompleted()),
 			this, SLOT(computeDecompositionCompleted()));
 
-	connect(this, SIGNAL(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)),
-			hfEngine, SLOT(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double)));
+	connect(this, SIGNAL(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, bool)),
+			hfEngine, SLOT(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, bool)));
 
 	connect(hfEngine, SIGNAL(computeOneStockPackingFromDecompositionCompleted(bool)),
 			this, SLOT(computeOneStockPackingFromDecompositionCompleted(bool)));
@@ -1314,6 +1317,14 @@ void HFGui::on_zStockSpinBox_valueChanged(int arg1)
 	mw.canvas.update();
 }
 
+void HFGui::on_frameThicknessCheckBox_stateChanged(int arg1)
+{
+	ui->xFrameThickLabel->setEnabled(arg1 == Qt::Checked);
+	ui->xFrameThickSpinBox->setEnabled(arg1 == Qt::Checked);
+	ui->yFrameThickLabel->setEnabled(arg1 == Qt::Checked);
+	ui->yFrameThickSpinBox->setEnabled(arg1 == Qt::Checked);
+}
+
 void HFGui::on_clearPackingPushButton_clicked()
 {
 	packing.clear();
@@ -1326,8 +1337,17 @@ void HFGui::on_clearPackingPushButton_clicked()
 
 void HFGui::on_packPushButton_clicked()
 {
-	hfEngine->computePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value(),
-											cg3::Point2d(5, 2), 1, ui->sizesFactorSpinBox->value());
+	cg3::Point2d frameThickness;
+	double zOffset = 0;
+	if (ui->frameThicknessCheckBox->isChecked()){
+		frameThickness = cg3::Point2d(ui->xFrameThickSpinBox->value(), ui->yFrameThickSpinBox->value());
+	}
+	if (ui->baseOffsetCheckBox->isChecked()){
+		zOffset = ui->baseOffsetSpinBox->value();
+	}
+	hfEngine->computePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness, zOffset,
+											  ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5, 2), 1,
+											  ui->sizesFactorSpinBox->value(), ui->computeNegativeCheckBox->isChecked());
 	packing.clear();
 
 	uint i = 0;
@@ -1337,6 +1357,18 @@ void HFGui::on_packPushButton_clicked()
 		uint j = 0;
 		for (const cg3::Dcel& d : stock)
 			packing.at(i).pushBack(d, "Block " + std::to_string(j++));
+		/*if (ui->baseOffsetCheckBox->isChecked()){
+			cg3::BoundingBox3 bb(cg3::Point3d(), cg3::Point3d(this->stock.maxX(), this->stock.maxY(), zOffset));
+			cg3::Dcel b = cg3::EigenMeshAlgorithms::makeBox(bb);
+			packing.at(i).pushBack(b, "Offset");
+		}
+		if (ui->frameThicknessCheckBox->isChecked()){
+			cg3::BoundingBox3 st = this->stock;
+			if (ui->baseOffsetCheckBox->isChecked()){
+				st.minZ() = zOffset;
+			}
+			packing.at(i).pushBack(hfEngine->computeFrameStock(st, frameThickness), "Frame Stock");
+		}*/
 		i++;
 	}
 
@@ -1350,8 +1382,20 @@ void HFGui::on_packPushButton_clicked()
 void HFGui::on_packOneStockButton_clicked()
 {
 	startWork();
+	cg3::Point2d frameThickness(-1, -1);
+	double zOffset = -1;
+	if (ui->frameThicknessCheckBox->isChecked()){
+		frameThickness = cg3::Point2d(ui->xFrameThickSpinBox->value(), ui->yFrameThickSpinBox->value());
+	}
+	if (ui->baseOffsetCheckBox->isChecked()){
+		zOffset = ui->baseOffsetSpinBox->value();
+	}
 
-	emit computeOneStockPackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5,2), 1);
+	emit computeOneStockPackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness,
+												 zOffset, ui->distBetweenBlocksSpinBox->value(),
+												 cg3::Point2d(5,2), 1, ui->computeNegativeCheckBox->isChecked());
+//	hfEngine->computeOneStockPackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness,
+//												 ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5,2), 1);
 }
 
 void HFGui::computeOneStockPackingFromDecompositionCompleted(bool success)
@@ -1363,8 +1407,22 @@ void HFGui::computeOneStockPackingFromDecompositionCompleted(bool success)
 			bool vis = i == 0;
 			packing.pushBack(cg3::DrawableObjectsContainer<cg3::DrawableDcel>(), "Stock " + std::to_string(i), vis);
 			uint j = 0;
-			for (const cg3::Dcel& d : stock)
+			for (const cg3::Dcel& d : stock){
 				packing.at(i).pushBack(d, "Block " + std::to_string(j++));
+			}
+			/*if (ui->baseOffsetCheckBox->isChecked()){
+				cg3::BoundingBox3 bb(cg3::Point3d(), cg3::Point3d(this->stock.maxX(), this->stock.maxY(), ui->baseOffsetSpinBox->value()));
+				cg3::Dcel b = cg3::EigenMeshAlgorithms::makeBox(bb);
+				packing.at(i).pushBack(b, "Offset");
+			}
+			if (ui->frameThicknessCheckBox->isChecked()){
+				cg3::Point2d frameThickness  = cg3::Point2d(ui->xFrameThickSpinBox->value(), ui->yFrameThickSpinBox->value());
+				cg3::BoundingBox3 st = this->stock;
+				if (ui->baseOffsetCheckBox->isChecked()){
+					st.minZ() = ui->baseOffsetSpinBox->value();
+				}
+				packing.at(i).pushBack(hfEngine->computeFrameStock(st, frameThickness), "Frame Stock");
+			}*/
 			i++;
 		}
 
@@ -1382,4 +1440,10 @@ void HFGui::computeOneStockPackingFromDecompositionCompleted(bool success)
 		box->exec();
 	}
 	endWork();
+}
+
+void HFGui::on_baseOffsetCheckBox_stateChanged(int arg1)
+{
+	ui->baseOffsetSpinBox->setEnabled(arg1 == Qt::Checked);
+	ui->baseOffsetLabel->setEnabled(arg1 == Qt::Checked);
 }

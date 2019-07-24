@@ -173,7 +173,7 @@ std::vector< std::vector<std::pair<int, cg3::Point3d> > > packing(const std::vec
 
 		// Create some bins!
 		BinPack2D::CanvasArray<int> canvasArray =
-				BinPack2D::UniformCanvasArrayBuilder<int>(stock.lengthX(),stock.lengthY(),1).Build();
+				BinPack2D::UniformCanvasArrayBuilder<int>(stock.lengthX()-distanceBetweenblocks,stock.lengthY()-distanceBetweenblocks,1).Build();
 
 		// A place to store content that didnt fit into the canvas array.
 		BinPack2D::ContentAccumulator<int> remainder;
@@ -199,7 +199,7 @@ std::vector< std::vector<std::pair<int, cg3::Point3d> > > packing(const std::vec
 
 			unpackedBlocks.erase((uint)myContent);
 
-			cg3::Point3d pos((double)content.coord.x, (double)content.coord.y, (double)content.coord.z);
+			cg3::Point3d pos((double)content.coord.x + distanceBetweenblocks, (double)content.coord.y + distanceBetweenblocks, (double)content.coord.z);
 
 			std::pair<int, cg3::Point3d> pair;
 			pair.first = content.rotated ? -(myContent+1): (myContent+1);

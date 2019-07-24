@@ -7,6 +7,7 @@
 #include "hf_engine.h"
 
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
+#include <cg3/meshes/dcel/dcel_builder.h>
 #include <cg3/algorithms/global_optimal_rotation_matrix.h>
 #include <cg3/algorithms/sphere_coverage.h>
 #include <cg3/libigl/booleans.h>
@@ -274,20 +275,26 @@ std::vector<cg3::Dcel> &HFEngine::decomposition()
 	return _decomposition;
 }
 
-void HFEngine::computePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength, double distanceBetweenblocks, cg3::Point2d clearnessStock, double clearnessTool, double factor)
+void HFEngine::computePackingFromDecomposition(const cg3::BoundingBox3& stock, double toolLength,
+		const cg3::Point2d& frameThicknessStock, double zOffset,
+		double distanceBetweenblocks, cg3::Point2d clearnessStock,
+		double clearnessTool, double factor, bool computeNegative)
 {
 	_packing.clear();
 
-	std::vector<cg3::Dcel> tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool, factor);
+	cg3::BoundingBox3 internalStock(cg3::Point3d(stock.minX() + frameThicknessStock.x(), stock.minY() + frameThicknessStock.y(), stock.minZ() + zOffset), cg3::Point3d(stock.maxX() - frameThicknessStock.x(), stock.maxY() - frameThicknessStock.y(), stock.maxZ()));
+
+	std::vector<cg3::Dcel> tmpPacking = packingPreProcessing(internalStock, toolLength, clearnessStock, clearnessTool, factor);
 
 	//packing
 	std::vector< std::vector<std::pair<int, cg3::Point3d> > > packs =
-			packing::packing(tmpPacking, stock, distanceBetweenblocks);
+			packing::packing(tmpPacking, internalStock, distanceBetweenblocks);
 
 	uint i = 0;
 	for (const auto& pack : packs){
 		_packing.push_back(std::vector<cg3::Dcel>(pack.size()));
 		uint j = 0;
+		cg3::SimpleEigenMesh allMeshes;
 		for (const std::pair<int, cg3::Point3d>& p : pack){
 			bool rotated = false;
 			if (p.first < 0)
@@ -296,19 +303,65 @@ void HFEngine::computePackingFromDecomposition(const cg3::BoundingBox3& stock, d
 			_packing[i][j] = tmpPacking[std::abs(p.first)-1];
 			if (rotated) {
 				_packing[i][j].rotate(cg3::Z_AXIS, M_PI/2);
-				_packing[i][j].translate(stock.min() - _packing[i][j].boundingBox().min());
+				_packing[i][j].translate(internalStock.min() - _packing[i][j].boundingBox().min());
 			}
-			_packing[i][j].translate(p.second - stock.min());
+			_packing[i][j].translate(p.second);
+			if (computeNegative)
+				allMeshes = cg3::libigl::union_(allMeshes, _packing[i][j]);
 			j++;
 		}
+		if (zOffset > 0){
+			cg3::BoundingBox3 bb(cg3::Point3d(), cg3::Point3d(stock.maxX(), stock.maxY(), zOffset));
+			cg3::Dcel b = cg3::EigenMeshAlgorithms::makeBox(bb);
+			_packing.at(i).push_back(b);
+			j++;
+		}
+		if (frameThicknessStock.x() > 0 && frameThicknessStock.y() > 0){
+			cg3::BoundingBox3 st = stock;
+			if (zOffset > 0){
+				st.minZ() = zOffset;
+			}
+			_packing.at(i).push_back(computeFrameStock(st, frameThicknessStock));
+			_packing[i][j].triangulate();
+			if (computeNegative){
+				allMeshes = cg3::libigl::union_(allMeshes, _packing[i][j]);
+			}
+			j++;
+		}
+		//allMeshes.saveOnObj("allMeshes.obj");
+
+		if (computeNegative){
+			cg3::BoundingBox3 st = stock;
+			if (zOffset > 0){
+				st.minZ() = zOffset;
+			}
+			st.minZ() += cg3::EPSILON;
+			cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(st);
+			_packing[i].push_back(cg3::libigl::difference(b, allMeshes));
+			_packing[i][j].rotate(cg3::Y_AXIS, M_PI, stock.center());
+			_packing[i][j].updateFaceNormals();
+			_packing[i][j].updateVertexNormals();
+		}
+
 		i++;
 	}
 
 }
 
-bool HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock, double toolLength, double distanceBetweenBlocks, cg3::Point2d clearnessStock, double clearnessTool)
+bool HFEngine::computeOneStockPackingFromDecomposition(
+		const cg3::BoundingBox3 &stock, double toolLength,
+		cg3::Point2d frameThicknessStock, double zOffset,
+		double distanceBetweenBlocks, cg3::Point2d clearnessStock,
+		double clearnessTool, bool computeNegative)
 {
-	auto tmpPacking = packingPreProcessing(stock, toolLength, clearnessStock, clearnessTool);
+	cg3::BoundingBox3 internalStock(cg3::Point3d(stock.minX() + frameThicknessStock.x(),
+												 stock.minY() + frameThicknessStock.y(),
+												 stock.minZ() + zOffset),
+									cg3::Point3d(stock.maxX() - frameThicknessStock.x(),
+												 stock.maxY() - frameThicknessStock.y(),
+												 stock.maxZ()));
+
+	auto tmpPacking = packingPreProcessing(internalStock, toolLength, clearnessStock, clearnessTool);
 
 	double factor = 1;
 	double step = factor / 200;
@@ -318,21 +371,115 @@ bool HFEngine::computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &
 		if (factor != 1){
 			for (cg3::Dcel& b : bl){
 				b.scale(factor);
-				cg3::Vec3d dir = stock.min() - b.boundingBox().min();
+				cg3::Vec3d dir = internalStock.min() - b.boundingBox().min();
 				b.translate(dir);
 			}
 		}
 
-		packs = packing::packing(bl, stock, distanceBetweenBlocks);
+		packs = packing::packing(bl, internalStock, distanceBetweenBlocks);
 
 		factor-= step;
 	} while(factor > 0 && packs.size() > 1);
 
 	if (factor > 0){
 		_packing.clear();
-		setOneStockPacking(tmpPacking, factor, stock, packs[0]);
+		setOneStockPacking(tmpPacking, factor, internalStock, packs[0]);
+		cg3::SimpleEigenMesh allMeshes;
+		if (computeNegative){
+			for (const cg3::Dcel& b : _packing[0]){
+				allMeshes = cg3::libigl::union_(allMeshes, b);
+			}
+		}
+		if (zOffset > 0){
+			cg3::BoundingBox3 bb(cg3::Point3d(), cg3::Point3d(stock.maxX(), stock.maxY(), zOffset));
+			cg3::Dcel b = cg3::EigenMeshAlgorithms::makeBox(bb);
+			_packing.at(0).push_back(b);
+		}
+		if (frameThicknessStock.x() > 0 && frameThicknessStock.y() > 0){
+			cg3::BoundingBox3 st = stock;
+			if (zOffset > 0){
+				st.minZ() = zOffset;
+			}
+			_packing.at(0).push_back(computeFrameStock(st, frameThicknessStock));
+			uint s = _packing[0].size()-1;
+			_packing[0][s].triangulate();
+			if (computeNegative){
+				allMeshes = cg3::libigl::union_(allMeshes, _packing[0][_packing[0].size()-1]);
+			}
+			if (computeNegative){
+				cg3::BoundingBox3 st = stock;
+				if (zOffset > 0){
+					st.minZ() = zOffset;
+				}
+				st.minZ() += cg3::EPSILON;
+				cg3::SimpleEigenMesh b = cg3::EigenMeshAlgorithms::makeBox(st);
+				_packing[0].push_back(cg3::libigl::difference(b, allMeshes));
+				s++;
+				_packing[0][s].rotate(cg3::Y_AXIS, M_PI, stock.center());
+				_packing[0][s].updateFaceNormals();
+				_packing[0][s].updateVertexNormals();
+			}
+		}
 	}
 	return factor > 0;
+}
+
+cg3::Dcel HFEngine::computeFrameStock(const cg3::BoundingBox3 &stock, cg3::Point2d frameThicknessStock) const
+{
+	cg3::DcelBuilder b;
+	cg3::Point3d fsd0( frameThicknessStock.x(),  frameThicknessStock.y(), 0);
+	cg3::Point3d fsd1(-frameThicknessStock.x(),  frameThicknessStock.y(), 0);
+	cg3::Point3d fsd2(-frameThicknessStock.x(), -frameThicknessStock.y(), 0);
+	cg3::Point3d fsd3( frameThicknessStock.x(), -frameThicknessStock.y(), 0);
+
+	double diff = fsd0.length() / 2;
+	cg3::Point3d fsd4(fsd0.x()-diff,  fsd0.y()-diff, 0);
+	cg3::Point3d fsd5(fsd1.x()+diff,  fsd1.y()-diff, 0);
+	cg3::Point3d fsd6(fsd2.x()+diff,  fsd2.y()+diff, 0);
+	cg3::Point3d fsd7(fsd3.x()-diff,  fsd3.y()+diff, 0);
+
+	b.addVertex(stock[0]);
+	b.addVertex(stock[1]);
+	b.addVertex(stock[5]);
+	b.addVertex(stock[4]);
+
+	b.addVertex(stock[3]);
+	b.addVertex(stock[2]);
+	b.addVertex(stock[6]);
+	b.addVertex(stock[7]);
+
+	b.addVertex(stock[0]+fsd0); //8
+	b.addVertex(stock[1]+fsd1); //9
+	b.addVertex(stock[5]+fsd2); //10
+	b.addVertex(stock[4]+fsd3); //11
+
+	b.addVertex(stock[3]+fsd0); //12
+	b.addVertex(stock[2]+fsd1); //13
+	b.addVertex(stock[6]+fsd2); //14
+	b.addVertex(stock[7]+fsd3); //15
+
+	b.addFace(0, 3, 11, 8);
+	b.addFace(0, 8, 9, 1);
+	b.addFace(1, 9, 10, 2);
+	b.addFace(2, 10, 11, 3);
+
+	b.addFace(4, 12, 15, 7);
+	b.addFace(5, 13, 12, 4);
+	b.addFace(6, 14, 13, 5);
+	b.addFace(7, 15, 14, 6);
+
+	b.addFace(0, 4, 7, 3);
+	b.addFace(1, 5, 4, 0);
+	b.addFace(2, 6, 5, 1);
+	b.addFace(3, 7, 6, 2);
+
+	b.addFace(11, 15, 12, 8);
+	b.addFace(11, 10, 14, 15);
+	b.addFace(10, 9, 13, 14);
+	b.addFace(13, 9, 8, 12);
+
+	b.finalize();
+	return b.dcel();
 }
 
 std::vector<std::vector<cg3::Dcel>> HFEngine::packing() const
@@ -504,7 +651,7 @@ void HFEngine::setOneStockPacking(std::vector<cg3::Dcel>tmpPacking, double facto
 			_packing[0][j].rotate(cg3::Z_AXIS, M_PI/2);
 			_packing[0][j].translate(stock.min() - _packing[0][j].boundingBox().min());
 		}
-		_packing[0][j].translate(p.second - stock.min());
+		_packing[0][j].translate(p.second);
 		j++;
 	}
 }

@@ -80,7 +80,7 @@ signals:
 	void computeDecomposition();
 	void computeDecompositionExact();
 	void cut(cg3::Dcel, HFBox);
-	void computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, double, cg3::Point2d, double);
+	void computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, bool);
 
 private slots:
 
@@ -176,12 +176,17 @@ private slots:
 
 	void on_zStockSpinBox_valueChanged(int arg1);
 
+	void on_frameThicknessCheckBox_stateChanged(int arg1);
+
 	void on_clearPackingPushButton_clicked();
 
 	void on_packPushButton_clicked();
 
 	void on_packOneStockButton_clicked();
 	void computeOneStockPackingFromDecompositionCompleted(bool success);
+
+
+	void on_baseOffsetCheckBox_stateChanged(int arg1);
 
 private:
 	Ui::HFGui *ui;
