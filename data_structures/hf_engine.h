@@ -44,7 +44,7 @@ public:
 	std::vector<cg3::Dcel>& decomposition();
 
 
-	void computePackingFromDecomposition(
+	virtual void computePackingFromDecomposition(
 			const cg3::BoundingBox3 &stock, double toolLength,
 			const cg3::Point2d& frameThicknessStock, double zOffset,
 			double distangeBetweenblocks = 5, cg3::Point2d clearnessStock = cg3::Point2d(5, 2),

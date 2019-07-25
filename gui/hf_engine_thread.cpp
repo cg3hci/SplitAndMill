@@ -143,6 +143,16 @@ void HFEngineThread::computeDecompositionExact()
 	emit computeDecompositionCompleted();
 }
 
+void HFEngineThread::computePackingFromDecomposition(
+		const cg3::BoundingBox3 &stock, double toolLength,
+		const cg3::Point2d &frameThicknessStock, double zOffset,
+		double distanceBetweenBlocks, cg3::Point2d clearnessStock,
+		double clearnessTool, double factor, bool computeNegative)
+{
+	HFEngine::computePackingFromDecomposition(stock, toolLength, frameThicknessStock, zOffset, distanceBetweenBlocks, clearnessStock, clearnessTool, factor, computeNegative);
+	emit computePackingFromDecompositionCompleted(true);
+}
+
 bool HFEngineThread::computeOneStockPackingFromDecomposition(
 		const cg3::BoundingBox3& stock, double toolLength,
 		cg3::Point2d frameThicknessStock, double zOffset,
@@ -150,6 +160,6 @@ bool HFEngineThread::computeOneStockPackingFromDecomposition(
 		double clearnessTool, bool computeNegative)
 {
 	bool b = HFEngine::computeOneStockPackingFromDecomposition(stock, toolLength, frameThicknessStock, zOffset, distanceBetweenBlocks, clearnessStock, clearnessTool, computeNegative);
-	emit computeOneStockPackingFromDecompositionCompleted(b);
+	emit computePackingFromDecompositionCompleted(b);
 	return b;
 }

@@ -80,6 +80,7 @@ signals:
 	void computeDecomposition();
 	void computeDecompositionExact();
 	void cut(cg3::Dcel, HFBox);
+	void computePackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, double, bool);
 	void computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, bool);
 
 private slots:
@@ -183,7 +184,7 @@ private slots:
 	void on_packPushButton_clicked();
 
 	void on_packOneStockButton_clicked();
-	void computeOneStockPackingFromDecompositionCompleted(bool success);
+	void computePackingFromDecompositionCompleted(bool success);
 
 
 	void on_baseOffsetCheckBox_stateChanged(int arg1);

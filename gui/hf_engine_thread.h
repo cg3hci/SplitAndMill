@@ -27,11 +27,20 @@ public slots:
 	void restoreHighFrequencies(uint nIterations, double flipAngle);
 	void computeDecomposition();
 	void computeDecompositionExact();
-	bool computeOneStockPackingFromDecomposition(const cg3::BoundingBox3 &stock,
+	void computePackingFromDecomposition(
+			const cg3::BoundingBox3 &stock,
+			double toolLength,
+			const cg3::Point2d& frameThicknessStock,
+			double zOffset,
+			double distanceBetweenBlocks = 5,
+			cg3::Point2d clearnessStock = cg3::Point2d(5, 2),
+			double clearnessTool = 1, double factor = 1, bool computeNegative = false);
+	bool computeOneStockPackingFromDecomposition(
+			const cg3::BoundingBox3 &stock,
 			double toolLength,
 			cg3::Point2d frameThicknessStock,
 			double zOffset,
-			double distanceBetweenblocks = 5,
+			double distanceBetweenBlocks = 5,
 			cg3::Point2d clearnessStock = cg3::Point2d(5, 2),
 			double clearnessTool = 1, bool computeNegative = false);
 
@@ -42,7 +51,7 @@ signals:
 	void cutCompleted(cg3::Dcel);
 	void restoreHighFrequenciesCompleted();
 	void computeDecompositionCompleted();
-	void computeOneStockPackingFromDecompositionCompleted(bool);
+	void computePackingFromDecompositionCompleted(bool);
 };
 
 #endif // HF_ENGINE_THREAD_H

@@ -281,6 +281,8 @@ void HFEngine::computePackingFromDecomposition(const cg3::BoundingBox3& stock, d
 		double clearnessTool, double factor, bool computeNegative)
 {
 	_packing.clear();
+	if (zOffset < 0)
+		zOffset = 0;
 
 	cg3::BoundingBox3 internalStock(cg3::Point3d(stock.minX() + frameThicknessStock.x(), stock.minY() + frameThicknessStock.y(), stock.minZ() + zOffset), cg3::Point3d(stock.maxX() - frameThicknessStock.x(), stock.maxY() - frameThicknessStock.y(), stock.maxZ()));
 
@@ -354,6 +356,8 @@ bool HFEngine::computeOneStockPackingFromDecomposition(
 		double distanceBetweenBlocks, cg3::Point2d clearnessStock,
 		double clearnessTool, bool computeNegative)
 {
+	if (zOffset < 0)
+		zOffset = 0;
 	cg3::BoundingBox3 internalStock(cg3::Point3d(stock.minX() + frameThicknessStock.x(),
 												 stock.minY() + frameThicknessStock.y(),
 												 stock.minZ() + zOffset),
@@ -608,6 +612,9 @@ std::vector<cg3::Dcel> HFEngine::rotateAllBlocks()
 
 std::vector<cg3::Dcel> HFEngine::packingPreProcessing(const cg3::BoundingBox3& stock, double toolLength, cg3::Point2d clearnessStock, double clearnessTool, double factor)
 {
+	if (clearnessStock.x() < 0) clearnessStock.x() = 0;
+	if (clearnessStock.y() < 0) clearnessStock.y() = 0;
+
 	//rotation
 	std::vector<cg3::Dcel> tmpPacking = rotateAllBlocks();
 

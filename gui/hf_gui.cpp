@@ -842,11 +842,14 @@ void HFGui::setUpSignals()
 	connect(hfEngine, SIGNAL(computeDecompositionCompleted()),
 			this, SLOT(computeDecompositionCompleted()));
 
+	connect(this, SIGNAL(computePackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, double, bool)),
+			hfEngine, SLOT(computePackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, double, bool)));
+
 	connect(this, SIGNAL(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, bool)),
 			hfEngine, SLOT(computeOneStockPackingFromDecomposition(cg3::BoundingBox3, double, cg3::Point2d, double, double, cg3::Point2d, double, bool)));
 
-	connect(hfEngine, SIGNAL(computeOneStockPackingFromDecompositionCompleted(bool)),
-			this, SLOT(computeOneStockPackingFromDecompositionCompleted(bool)));
+	connect(hfEngine, SIGNAL(computePackingFromDecompositionCompleted(bool)),
+			this, SLOT(computePackingFromDecompositionCompleted(bool)));
 }
 
 void HFGui::on_taubinSmoothingPushButton_clicked()
@@ -1337,18 +1340,22 @@ void HFGui::on_clearPackingPushButton_clicked()
 
 void HFGui::on_packPushButton_clicked()
 {
-	cg3::Point2d frameThickness;
-	double zOffset = 0;
+	startWork();
+	cg3::Point2d frameThickness(-1, -1);
+	double zOffset = -1;
 	if (ui->frameThicknessCheckBox->isChecked()){
 		frameThickness = cg3::Point2d(ui->xFrameThickSpinBox->value(), ui->yFrameThickSpinBox->value());
 	}
 	if (ui->baseOffsetCheckBox->isChecked()){
 		zOffset = ui->baseOffsetSpinBox->value();
 	}
-	hfEngine->computePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness, zOffset,
+	emit (computePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness, zOffset,
 											  ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5, 2), 1,
-											  ui->sizesFactorSpinBox->value(), ui->computeNegativeCheckBox->isChecked());
-	packing.clear();
+											  ui->sizesFactorSpinBox->value(), ui->computeNegativeCheckBox->isChecked()));
+//	hfEngine->computePackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness, zOffset,
+//											  ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5, 2), 1,
+//											  ui->sizesFactorSpinBox->value(), ui->computeNegativeCheckBox->isChecked());
+	/*packing.clear();
 
 	uint i = 0;
 	for (const std::vector<cg3::Dcel>& stock : hfEngine->packing()){
@@ -1357,18 +1364,6 @@ void HFGui::on_packPushButton_clicked()
 		uint j = 0;
 		for (const cg3::Dcel& d : stock)
 			packing.at(i).pushBack(d, "Block " + std::to_string(j++));
-		/*if (ui->baseOffsetCheckBox->isChecked()){
-			cg3::BoundingBox3 bb(cg3::Point3d(), cg3::Point3d(this->stock.maxX(), this->stock.maxY(), zOffset));
-			cg3::Dcel b = cg3::EigenMeshAlgorithms::makeBox(bb);
-			packing.at(i).pushBack(b, "Offset");
-		}
-		if (ui->frameThicknessCheckBox->isChecked()){
-			cg3::BoundingBox3 st = this->stock;
-			if (ui->baseOffsetCheckBox->isChecked()){
-				st.minZ() = zOffset;
-			}
-			packing.at(i).pushBack(hfEngine->computeFrameStock(st, frameThickness), "Frame Stock");
-		}*/
 		i++;
 	}
 
@@ -1376,7 +1371,7 @@ void HFGui::on_packPushButton_clicked()
 	ui->clearPackingPushButton->setEnabled(true);
 	mw.setSavePackingButtons(true);
 	mw.canvas.update();
-	mw.setSaved(false);
+	mw.setSaved(false);*/
 }
 
 void HFGui::on_packOneStockButton_clicked()
@@ -1394,11 +1389,9 @@ void HFGui::on_packOneStockButton_clicked()
 	emit computeOneStockPackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness,
 												 zOffset, ui->distBetweenBlocksSpinBox->value(),
 												 cg3::Point2d(5,2), 1, ui->computeNegativeCheckBox->isChecked());
-//	hfEngine->computeOneStockPackingFromDecomposition(stock, ui->toolLengthSpinBox->value(), frameThickness,
-//												 ui->distBetweenBlocksSpinBox->value(), cg3::Point2d(5,2), 1);
 }
 
-void HFGui::computeOneStockPackingFromDecompositionCompleted(bool success)
+void HFGui::computePackingFromDecompositionCompleted(bool success)
 {
 	if (success) {
 		packing.clear();
@@ -1410,19 +1403,6 @@ void HFGui::computeOneStockPackingFromDecompositionCompleted(bool success)
 			for (const cg3::Dcel& d : stock){
 				packing.at(i).pushBack(d, "Block " + std::to_string(j++));
 			}
-			/*if (ui->baseOffsetCheckBox->isChecked()){
-				cg3::BoundingBox3 bb(cg3::Point3d(), cg3::Point3d(this->stock.maxX(), this->stock.maxY(), ui->baseOffsetSpinBox->value()));
-				cg3::Dcel b = cg3::EigenMeshAlgorithms::makeBox(bb);
-				packing.at(i).pushBack(b, "Offset");
-			}
-			if (ui->frameThicknessCheckBox->isChecked()){
-				cg3::Point2d frameThickness  = cg3::Point2d(ui->xFrameThickSpinBox->value(), ui->yFrameThickSpinBox->value());
-				cg3::BoundingBox3 st = this->stock;
-				if (ui->baseOffsetCheckBox->isChecked()){
-					st.minZ() = ui->baseOffsetSpinBox->value();
-				}
-				packing.at(i).pushBack(hfEngine->computeFrameStock(st, frameThickness), "Frame Stock");
-			}*/
 			i++;
 		}
 
