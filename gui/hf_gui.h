@@ -90,6 +90,11 @@ private slots:
 	void setProgressBarValue(uint value);
 	void setUpSignals();
 
+	//tolerances
+	void on_lightToleranceSpinBox_valueChanged(int);
+
+	void on_flipAngleSpinBox_valueChanged(int);
+
 	//smoothing
 	void on_taubinSmoothingPushButton_clicked();
 	void taubinSmoothingCompleted();

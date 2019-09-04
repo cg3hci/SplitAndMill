@@ -76,6 +76,9 @@ HFGui::HFGui(QWidget *parent) :
 		tabs[i]->setVisible(false);
 		tabLabels[i]->setEnabled(false);
 	}
+	ui->nRestoreIterationsLabel->setEnabled(true);
+	ui->nRestoreIterationsSpinBox->setEnabled(true);
+	ui->restoreHighFrequenciesPushButton->setEnabled(true);
 }
 
 HFGui::~HFGui()
@@ -202,11 +205,7 @@ void HFGui::afterLoadHFD()
 			ui->nextPostProcessingPushButton->setEnabled(true);
 		}
 		if (hfEngine->usesSmoothedMesh()) {
-			ui->restoreHighFrequenciesPushButton->setEnabled(true);
-			ui->nRestoreIterationsSpinBox->setEnabled(true);
-			ui->nRestoreIterationsLabel->setEnabled(true);
-			ui->hausDescrLabel->setEnabled(true);
-			ui->hausdorffDistanceLabel->setEnabled(true);
+			ui->highFrequenciesRestoreFrame->setEnabled(true);
 		}
 	}
 	if (actualTab == 3){
@@ -429,8 +428,11 @@ void HFGui::updateSurfaceAndvolume()
 	double percV = remainingVolume / totalVolume * 100;
 	double percS = remainingSurface / totalSurface * 100;
 
-	ui->remainingVolumeLabel->setText(QString::fromStdString(std::to_string(percV)) + " %");
-	ui->remainingSurfaceLabel->setText(QString::fromStdString(std::to_string(percS)) + " %");
+	std::setlocale(LC_NUMERIC, "en_US.UTF-8"); // makes sure "." is the decimal separator
+	std::string trimmedV = std::to_string(percV).substr(0, std::to_string(percV).find(".") + 3);
+	ui->remainingVolumeLabel->setText(QString::fromStdString(trimmedV) + " %");
+	std::string trimmedS = std::to_string(percS).substr(0, std::to_string(percS).find(".") + 3);
+	ui->remainingSurfaceLabel->setText(QString::fromStdString(trimmedS) + " %");
 }
 
 void HFGui::changeTab(uint tab)
@@ -599,6 +601,7 @@ void HFGui::undoSmoothing()
 	totalSurface = mesh.surfaceArea();
 	remainingVolume = totalVolume;
 	remainingSurface = totalSurface;
+	updateSurfaceAndvolume();
 	mesh.update();
 	mw.refreshDrawableObject(&mesh);
 	treeMesh = cg3::cgal::AABBTree3(mesh);
@@ -852,6 +855,16 @@ void HFGui::setUpSignals()
 			this, SLOT(computePackingFromDecompositionCompleted(bool)));
 }
 
+void HFGui::on_lightToleranceSpinBox_valueChanged(int)
+{
+	colorTestMesh();
+}
+
+void HFGui::on_flipAngleSpinBox_valueChanged(int)
+{
+	colorTestMesh();
+}
+
 void HFGui::on_taubinSmoothingPushButton_clicked()
 {
 	startWork();
@@ -950,6 +963,7 @@ void HFGui::on_preProcessingNextPushButton_clicked()
 	totalSurface = mesh.surfaceArea();
 	remainingVolume = totalVolume;
 	remainingSurface = totalSurface;
+	updateSurfaceAndvolume();
 	mw.canvas.update();
 }
 
@@ -1214,11 +1228,7 @@ void HFGui::finishDecomposition()
 	mw.setRotationButton(false);
 
 	if (mw.containsDrawableObject(&originalMesh)){
-		ui->restoreHighFrequenciesPushButton->setEnabled(true);
-		ui->nRestoreIterationsSpinBox->setEnabled(true);
-		ui->nRestoreIterationsLabel->setEnabled(true);
-		ui->hausDescrLabel->setEnabled(true);
-		ui->hausdorffDistanceLabel->setEnabled(true);
+		ui->highFrequenciesRestoreFrame->setEnabled(true);
 		originalMesh = hfEngine->originalMesh();
 		mw.refreshDrawableObject(&originalMesh);
 	}
