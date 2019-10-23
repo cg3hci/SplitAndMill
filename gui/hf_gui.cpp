@@ -1437,3 +1437,11 @@ void HFGui::on_baseOffsetCheckBox_stateChanged(int arg1)
 	ui->baseOffsetSpinBox->setEnabled(arg1 == Qt::Checked);
 	ui->baseOffsetLabel->setEnabled(arg1 == Qt::Checked);
 }
+
+void HFGui::on_prevPackingPushButton_clicked()
+{
+	addAction(UserAction(3, 2));
+	changeTab(2);
+	mw.deleteDrawableObject(&stock);
+	mw.canvas.update();
+}

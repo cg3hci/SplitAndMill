@@ -422,6 +422,8 @@ void HFMainWindow::on_actionLoad_Mesh_triggered()
 		bool b = hfFrame->loadMesh();
 		setRotationButton(b);
 		setLoadedButtons(b);
+		fileHFD = "";
+		setSaved(false);
 	}
 }
 

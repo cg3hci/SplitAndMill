@@ -194,6 +194,8 @@ private slots:
 
 	void on_baseOffsetCheckBox_stateChanged(int arg1);
 
+	void on_prevPackingPushButton_clicked();
+
 private:
 	Ui::HFGui *ui;
 	static const uint NTABS = 4;
