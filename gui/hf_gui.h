@@ -36,10 +36,10 @@ public:
 	~HFGui();
 
 	bool loadMesh();
-	bool loadHFD(std::string &filename);
-	void afterLoadHFD();
-	bool saveHFDAs(std::string &filename);
-	bool saveHFD(const std::string& filename);
+	bool loadSAM(std::string &filename);
+	void afterLoadSAM();
+	bool saveSAMAs(std::string &filename);
+	bool saveSAM(const std::string& filename);
 	bool decompositionComputed();
 	bool saveDecomposition();
 	bool packingComputed();
@@ -206,7 +206,7 @@ private:
     //reference to the MainWindow
 	HFMainWindow& mw;
 	cg3::viewer::LoaderSaver lsmesh;
-	cg3::viewer::LoaderSaver lshfd;
+	cg3::viewer::LoaderSaver lssam;
 
 	cg3::DrawableDcel mesh;
 	cg3::DrawableDcel originalMesh;

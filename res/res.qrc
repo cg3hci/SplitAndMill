@@ -12,5 +12,7 @@
         <file>ortho.png</file>
         <file>rotation.png</file>
         <file>reset_rotation.png</file>
+        <file>save-document-sam.png</file>
+        <file>open-document-sam.png</file>
     </qresource>
 </RCC>

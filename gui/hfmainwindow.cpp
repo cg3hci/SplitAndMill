@@ -69,14 +69,14 @@ HFMainWindow::HFMainWindow(QWidget* parent) :
 
 	//ui->dockDrawList->setVisible(false);
 
-	ui->saveHFDToolButton->setEnabled(false);
+	ui->saveSAMToolButton->setEnabled(false);
 	ui->savePackingToolButton->setEnabled(false);
 	ui->saveDecompositionToolButton->setEnabled(false);
-	ui->actionSave_HFD_Project->setEnabled(false);
+	ui->actionSave_SAM_Project->setEnabled(false);
 	ui->actionSave_Decomposition->setEnabled(false);
 	ui->actionSave_Packing->setEnabled(false);
 
-	setWindowTitle("Height-Field Decomposition - Untilted Project");
+	setWindowTitle("Split and Mill - Untilted Project");
 }
 
 HFMainWindow::~HFMainWindow()
@@ -92,8 +92,8 @@ void HFMainWindow::setWidget(HFGui *frame)
 
 void HFMainWindow::setLoadedButtons(bool b)
 {
-	ui->actionSave_HFD_Project->setEnabled(b);
-	ui->saveHFDToolButton->setEnabled(b);
+	ui->actionSave_SAM_Project->setEnabled(b);
+	ui->saveSAMToolButton->setEnabled(b);
 	setSaveDecompositionButtons(b && hfFrame->decompositionComputed());
 	setSavePackingButtons(b && hfFrame->packingComputed());
 }
@@ -114,13 +114,13 @@ void HFMainWindow::setSaved(bool b)
 {
 	saved = b;
 	std::string pname;
-	if (fileHFD != "") pname = cg3::filenameWithoutExtension(fileHFD);
+	if (fileSAM != "") pname = cg3::filenameWithoutExtension(fileSAM);
 	else pname = "Untilted Project";
 	if (saved) {
-		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname));
+		setWindowTitle("Split and Mill - " + QString::fromStdString(pname));
 	}
 	else {
-		setWindowTitle("Height-Field Decomposition - " + QString::fromStdString(pname) + "*");
+		setWindowTitle("Split and Mill - " + QString::fromStdString(pname) + "*");
 	}
 }
 
@@ -390,7 +390,7 @@ void HFMainWindow::on_actionLoad_Mesh_triggered()
 	bool load = true;
 	if (!saved){
 		std::string pname;
-		if (pname != "") pname = cg3::filenameWithoutExtension(fileHFD);
+		if (pname != "") pname = cg3::filenameWithoutExtension(fileSAM);
 		else pname = "Untilted Project";
 		QMessageBox* box = new QMessageBox(this);
 		box->setWindowTitle("");
@@ -410,7 +410,7 @@ void HFMainWindow::on_actionLoad_Mesh_triggered()
 		if (ret == QMessageBox::No)
 			load = true;
 		else if (ret == QMessageBox::Ok){
-			ui->actionSave_HFD_Project->trigger();
+			ui->actionSave_SAM_Project->trigger();
 			if (!saved)
 				load = false;
 		}
@@ -422,17 +422,17 @@ void HFMainWindow::on_actionLoad_Mesh_triggered()
 		bool b = hfFrame->loadMesh();
 		setRotationButton(b);
 		setLoadedButtons(b);
-		fileHFD = "";
+		fileSAM = "";
 		setSaved(false);
 	}
 }
 
-void HFMainWindow::on_actionLoad_HFD_Project_triggered()
+void HFMainWindow::on_actionLoad_SAM_Project_triggered()
 {
 	bool load = true;
 	if (!saved){
 		std::string pname;
-		if (pname != "") pname = cg3::filenameWithoutExtension(fileHFD);
+		if (pname != "") pname = cg3::filenameWithoutExtension(fileSAM);
 		else pname = "Untilted Project";
 		QMessageBox* box = new QMessageBox(this);
 		box->setWindowTitle("");
@@ -452,7 +452,7 @@ void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 		if (ret == QMessageBox::No)
 			load = true;
 		else if (ret == QMessageBox::Ok){
-			ui->actionSave_HFD_Project->trigger();
+			ui->actionSave_SAM_Project->trigger();
 			if (!saved)
 				load = false;
 		}
@@ -461,7 +461,7 @@ void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 		}
 	}
 	if (load){
-		bool b = hfFrame->loadHFD(fileHFD);
+		bool b = hfFrame->loadSAM(fileSAM);
 		if (b) {
 			setSaved(true);
 			setLoadedButtons(true);
@@ -469,19 +469,19 @@ void HFMainWindow::on_actionLoad_HFD_Project_triggered()
 	}
 }
 
-void HFMainWindow::on_actionSave_HFD_Project_triggered()
+void HFMainWindow::on_actionSave_SAM_Project_triggered()
 {
-	if (fileHFD == "")
-		ui->actionSave_HFD_Project_As->trigger();
+	if (fileSAM == "")
+		ui->actionSave_SAM_Project_As->trigger();
 	else{
-		bool b = hfFrame->saveHFD(fileHFD);
+		bool b = hfFrame->saveSAM(fileSAM);
 		setSaved(b);
 	}
 }
 
-void HFMainWindow::on_actionSave_HFD_Project_As_triggered()
+void HFMainWindow::on_actionSave_SAM_Project_As_triggered()
 {
-	bool b = hfFrame->saveHFDAs(fileHFD);
+	bool b = hfFrame->saveSAMAs(fileSAM);
 	setSaved(b);
 }
 
@@ -591,14 +591,14 @@ void HFMainWindow::on_loadToolButton_clicked()
 	ui->actionLoad_Mesh->trigger();
 }
 
-void HFMainWindow::on_loadHFDToolButton_clicked()
+void HFMainWindow::on_loadSAMToolButton_clicked()
 {
-	ui->actionLoad_HFD_Project->trigger();
+	ui->actionLoad_SAM_Project->trigger();
 }
 
-void HFMainWindow::on_saveHFDToolButton_clicked()
+void HFMainWindow::on_saveSAMToolButton_clicked()
 {
-	ui->actionSave_HFD_Project->trigger();
+	ui->actionSave_SAM_Project->trigger();
 }
 
 void HFMainWindow::on_saveDecompositionToolButton_clicked()
@@ -646,7 +646,7 @@ void HFMainWindow::closeEvent(QCloseEvent *event)
 {
 	if (!saved){
 		std::string pname;
-		if (pname != "") pname = cg3::filenameWithoutExtension(fileHFD);
+		if (pname != "") pname = cg3::filenameWithoutExtension(fileSAM);
 		else pname = "Untilted Project";
 		QMessageBox* box = new QMessageBox(this);
 		box->setWindowTitle("");
@@ -665,7 +665,7 @@ void HFMainWindow::closeEvent(QCloseEvent *event)
 		if (ret == QMessageBox::Cancel)
 			event->ignore();
 		else if (ret == QMessageBox::Ok){
-			ui->actionSave_HFD_Project->trigger();
+			ui->actionSave_SAM_Project->trigger();
 			if (!saved)
 				event->ignore();
 		}

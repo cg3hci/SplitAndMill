@@ -74,9 +74,9 @@
     </property>
     <addaction name="separator"/>
     <addaction name="actionLoad_Mesh"/>
-    <addaction name="actionLoad_HFD_Project"/>
-    <addaction name="actionSave_HFD_Project"/>
-    <addaction name="actionSave_HFD_Project_As"/>
+    <addaction name="actionLoad_SAM_Project"/>
+    <addaction name="actionSave_SAM_Project"/>
+    <addaction name="actionSave_SAM_Project_As"/>
     <addaction name="actionSave_Decomposition"/>
     <addaction name="actionSave_Packing"/>
     <addaction name="separator"/>
@@ -237,7 +237,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="loadHFDToolButton">
+      <widget class="QToolButton" name="loadSAMToolButton">
        <property name="toolTip">
         <string>Load HFD Project</string>
        </property>
@@ -246,7 +246,7 @@
        </property>
        <property name="icon">
         <iconset resource="../res/res.qrc">
-         <normaloff>:/open-document-hfd.png</normaloff>:/open-document-hfd.png</iconset>
+         <normaloff>:/open-document-sam.png</normaloff>:/open-document-sam.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -257,7 +257,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="saveHFDToolButton">
+      <widget class="QToolButton" name="saveSAMToolButton">
        <property name="toolTip">
         <string>Save HFD Project</string>
        </property>
@@ -266,7 +266,7 @@
        </property>
        <property name="icon">
         <iconset resource="../res/res.qrc">
-         <normaloff>:/save-document-hfd.png</normaloff>:/save-document-hfd.png</iconset>
+         <normaloff>:/save-document-sam.png</normaloff>:/save-document-sam.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -620,14 +620,14 @@
     <string>Load Mesh</string>
    </property>
   </action>
-  <action name="actionLoad_HFD_Project">
+  <action name="actionLoad_SAM_Project">
    <property name="text">
-    <string>Load HFD Project</string>
+    <string>Load SAM Project</string>
    </property>
   </action>
-  <action name="actionSave_HFD_Project">
+  <action name="actionSave_SAM_Project">
    <property name="text">
-    <string>Save HFD Project</string>
+    <string>Save SAM Project</string>
    </property>
   </action>
   <action name="actionSave_Decomposition">
@@ -640,9 +640,9 @@
     <string>Save Packing</string>
    </property>
   </action>
-  <action name="actionSave_HFD_Project_As">
+  <action name="actionSave_SAM_Project_As">
    <property name="text">
-    <string>Save HFD Project As...</string>
+    <string>Save SAM Project As...</string>
    </property>
   </action>
  </widget>

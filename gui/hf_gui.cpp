@@ -22,7 +22,7 @@ HFGui::HFGui(QWidget *parent) :
 	ui(new Ui::HFGui),
 	mw((HFMainWindow&)*parent),
 	lsmesh(&mw),
-	lshfd(&mw),
+	lssam(&mw),
 	actualRotationMatrix(Eigen::Matrix3d::Identity()),
 	actualTab(0),
 	hfEngine(new HFEngineThread()),
@@ -48,7 +48,8 @@ HFGui::HFGui(QWidget *parent) :
 	lsmesh.addSupportedExtension("obj");
 	lsmesh.addSupportedExtension("ply");
 	lsmesh.addSupportedExtension("dcel");
-	lshfd.addSupportedExtension("hfd");
+	lssam.addSupportedExtension("sam");
+	lssam.addSupportedExtension("hfd");
 	mw.canvas.toggleCameraType();
 	mw.canvas.pushDrawableObject(&guides);
 	mw.canvas.pushDrawableObject(&drawableBox, false);
@@ -117,9 +118,9 @@ bool HFGui::loadMesh()
 	return false;
 }
 
-bool HFGui::loadHFD(std::string& filename)
+bool HFGui::loadSAM(std::string& filename)
 {
-	std::string tmp = lshfd.loadDialog("Load HFD");
+	std::string tmp = lssam.loadDialog("Load SAM");
 	if (tmp != "") {
 		std::ifstream myfile;
 		myfile.open (tmp, std::ios::in | std::ios::binary);
@@ -152,7 +153,7 @@ bool HFGui::loadHFD(std::string& filename)
 			setUpSignals();
 			//workerThread.start();
 			myfile.close();
-			afterLoadHFD();
+			afterLoadSAM();
 			filename = tmp;
 			return true;
 		}
@@ -160,7 +161,7 @@ bool HFGui::loadHFD(std::string& filename)
 	return false;
 }
 
-void HFGui::afterLoadHFD()
+void HFGui::afterLoadSAM()
 {
 	for (auto& d : hfDecomposition){
 		d.update();
@@ -246,9 +247,9 @@ void HFGui::afterLoadHFD()
 	endWork();
 }
 
-bool HFGui::saveHFDAs(std::string& filename)
+bool HFGui::saveSAMAs(std::string& filename)
 {
-	std::string tmp = lshfd.saveDialog("Save HFD");
+	std::string tmp = lssam.saveDialog("Save SAM");
 	if (tmp != "") {
 		std::ofstream myfile;
 		myfile.open (tmp, std::ios::out | std::ios::binary);
@@ -266,7 +267,7 @@ bool HFGui::saveHFDAs(std::string& filename)
 	return false;
 }
 
-bool HFGui::saveHFD(const string &filename)
+bool HFGui::saveSAM(const string &filename)
 {
 	std::ofstream myfile;
 	myfile.open (filename, std::ios::out | std::ios::binary);

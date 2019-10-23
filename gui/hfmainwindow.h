@@ -153,9 +153,9 @@ private slots:
 
     //Menu Actions
 	void on_actionLoad_Mesh_triggered();
-	void on_actionLoad_HFD_Project_triggered();
-	void on_actionSave_HFD_Project_triggered();
-	void on_actionSave_HFD_Project_As_triggered();
+	void on_actionLoad_SAM_Project_triggered();
+	void on_actionSave_SAM_Project_triggered();
+	void on_actionSave_SAM_Project_As_triggered();
 	void on_actionSave_Decomposition_triggered();
 	void on_actionSave_Packing_triggered();
     void on_actionSave_Snapshot_triggered();
@@ -175,8 +175,8 @@ private slots:
 	void on_actionShow_Box_triggered();
 
 	void on_loadToolButton_clicked();
-	void on_loadHFDToolButton_clicked();
-	void on_saveHFDToolButton_clicked();
+	void on_loadSAMToolButton_clicked();
+	void on_saveSAMToolButton_clicked();
 	void on_saveDecompositionToolButton_clicked();
 	void on_savePackingToolButton_clicked();
 	void on_orthoToolButton_toggled(bool b);
@@ -210,7 +210,7 @@ private:
 	std::map<const cg3::DrawableObject*, cg3::viewer::DrawableObjectDrawListManager*> mapDrawListManagers;
     std::set<std::shared_ptr<const cg3::DrawableObject> > sharedDrawableObjects;
 	bool saved;
-	std::string fileHFD;
+	std::string fileSAM;
 
 public:
 
