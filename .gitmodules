@@ -1,3 +1,9 @@
 [submodule "cg3lib"]
 	path = cg3lib
 	url = http://github.com/cg3hci/cg3lib.git
+[submodule "libigl"]
+	path = libigl
+	url = https://github.com/libigl/libigl
+[submodule "vcglib"]
+	path = vcglib
+	url = https://github.com/cnr-isti-vclab/vcglib
