@@ -13,17 +13,34 @@
 ## Source Code
 Source code is hosted on this GitHub repository. The program is built and tested on Ubuntu 18.04 with GCC 7.3 and on Microsoft Windows 10 with MSVC.
 
-### Downloading
+## Download
 ```bash
 git clone --recursive https://github.com/muntonialessandro/SplitAndMill
 ```
-### Build and Run (Ubuntu 18.04)
+## Build and Run 
+
+### Ubuntu 18.04
 ```bash
 sudo apt-get install qt5-default
 sudo apt-get install libboost-all-dev libcgal-dev libgmp-dev libqglviewer-dev-qt5 libeigen3-dev
 qmake SplitAndMill.pro
 make
 ```
+### Windows
+Download [Qt](https://www.qt.io/download-qt-installer?hsCtaTracking=99d9dd4f-5681-48d2-b096-470725510d34%7C074ddad0-fdef-4e53-8aa8-5e8a876d6ab4) and install it.
+
+Download [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library and create an environment variable called EIGEN_PATH containing the path in which the library is placed.
+
+Download and install [CGAL](https://www.cgal.org/) library and create an environment variable called CGAL_PATH containing the path in which the library is installed.
+
+Download and install [libQGLViewer](http://libqglviewer.com/) library and create an environment variable called LIBQGLVIEWER_PATH containing the path in which the library is installed.
+
+Clone this repo:
+```bash
+git clone --recursive https://github.com/muntonialessandro/SplitAndMill
+```
+
+Open the SplitAndMill project with QtCreator and run it.
 
 ## Code, warranties and bug report
 For any info about the software, please contact Alessandro Muntoni (muntoni.alessandro@gmail.com).
