@@ -14,5 +14,6 @@
         <file>reset_rotation.png</file>
         <file>save-document-sam.png</file>
         <file>open-document-sam.png</file>
+        <file>main_icon.png</file>
     </qresource>
 </RCC>
