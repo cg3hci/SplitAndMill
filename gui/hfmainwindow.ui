@@ -91,9 +91,20 @@
     <addaction name="separator"/>
     <addaction name="actionSave_Snapshot"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout_Split_and_Mill"/>
+    <addaction name="actionHome_Page"/>
+    <addaction name="separator"/>
+    <addaction name="actionSource_Code"/>
+    <addaction name="actionReport_a_Bug"/>
+   </widget>
    <addaction name="menuFile_2"/>
    <addaction name="menuFile"/>
    <addaction name="menuWindow"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QDockWidget" name="dockToolBox">
    <property name="sizePolicy">
@@ -647,6 +658,26 @@
   <action name="actionSave_SAM_Project_As">
    <property name="text">
     <string>Save SAM Project As...</string>
+   </property>
+  </action>
+  <action name="actionAbout_Split_and_Mill">
+   <property name="text">
+    <string>About Split and Mill</string>
+   </property>
+  </action>
+  <action name="actionHome_Page">
+   <property name="text">
+    <string>Home Page</string>
+   </property>
+  </action>
+  <action name="actionSource_Code">
+   <property name="text">
+    <string>Source Code</string>
+   </property>
+  </action>
+  <action name="actionReport_a_Bug">
+   <property name="text">
+    <string>Report Bug</string>
    </property>
   </action>
  </widget>

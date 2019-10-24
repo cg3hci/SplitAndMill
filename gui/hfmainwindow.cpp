@@ -17,6 +17,9 @@
 #include <QDockWidget>
 #include <QToolBox>
 #include <QFrame>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QDate>
 
 #include <cg3/viewer/interfaces/drawable_container.h>
 #include <cg3/viewer/interfaces/drawable_mesh.h>
@@ -584,6 +587,32 @@ void HFMainWindow::on_actionPerspective_Orthographic_Camera_Mode_triggered()
 void HFMainWindow::on_actionShow_Box_triggered()
 {
 	hfFrame->drawBox();
+}
+
+void HFMainWindow::on_actionAbout_Split_and_Mill_triggered()
+{
+	QLocale en(QLocale::English);
+	QMessageBox::about(this, "About Split and Mill",
+					   "<h2><b>Split and Mill</b></h2><br>"
+					   "Version: " + QString::number(version, 'f', 1) + "<br>"
+					   "Built on " + en.toString(QDate::currentDate()) + ".<br>"
+					   "GPL v3 licensed.<br>"
+					   "The program is provided as is with no warranty of any kind.");
+}
+
+void HFMainWindow::on_actionHome_Page_triggered()
+{
+
+}
+
+void HFMainWindow::on_actionSource_Code_triggered()
+{
+	QDesktopServices::openUrl(QUrl("https://github.com/muntonialessandro/SplitAndMill"));
+}
+
+void HFMainWindow::on_actionReport_Bug_triggered()
+{
+	QDesktopServices::openUrl(QUrl("https://github.com/muntonialessandro/SplitAndMill/issues"));
 }
 
 void HFMainWindow::on_loadToolButton_clicked()

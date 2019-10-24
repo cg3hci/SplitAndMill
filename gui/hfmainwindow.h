@@ -173,6 +173,10 @@ private slots:
     void on_actionReset_Point_of_View_triggered();
     void on_actionPerspective_Orthographic_Camera_Mode_triggered();
 	void on_actionShow_Box_triggered();
+	void on_actionAbout_Split_and_Mill_triggered();
+	void on_actionHome_Page_triggered();
+	void on_actionSource_Code_triggered();
+	void on_actionReport_Bug_triggered();
 
 	void on_loadToolButton_clicked();
 	void on_loadSAMToolButton_clicked();
@@ -211,6 +215,8 @@ private:
     std::set<std::shared_ptr<const cg3::DrawableObject> > sharedDrawableObjects;
 	bool saved;
 	std::string fileSAM;
+
+	const double version = 1.0;
 
 public:
 
