@@ -5,6 +5,8 @@
 
 ![alt text](misc/teaser.png)
 
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/f3_Ffuv6u2U/0.jpg)](https://www.youtube.com/watch?v=f3_Ffuv6u2U)
+ 
 ## Abstract
 
 \[[Paper]()\]
