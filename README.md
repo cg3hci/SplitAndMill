@@ -11,11 +11,11 @@
 \[[Web Site]()\]
 
 ## Source Code
-Source code is hosted on this GitHub repository. The program is built and tested on Ubuntu 18.04 with GCC 7.3 and on Microsoft Windows 10 with MSVC.
+Source code is hosted on this GitHub repository. The program is built and tested on Ubuntu 18.04 with GCC 7.3 and on Microsoft Windows 10 with MSVC2017.
 
 ## Download
 ```bash
-git clone --recursive https://github.com/muntonialessandro/SplitAndMill
+git clone --recursive https://github.com/cg3hci/SplitAndMill
 ```
 ## Build and Run 
 
@@ -37,7 +37,7 @@ Download and install [libQGLViewer](http://libqglviewer.com/) library and create
 
 Clone this repo:
 ```bash
-git clone --recursive https://github.com/muntonialessandro/SplitAndMill
+git clone --recursive https://github.com/cg3hci/SplitAndMill
 ```
 
 Open the SplitAndMill project with QtCreator and run it.
@@ -45,7 +45,7 @@ Open the SplitAndMill project with QtCreator and run it.
 ## Code, warranties and bug report
 For any info about the software, please contact Alessandro Muntoni (muntoni.alessandro@gmail.com).
 The software is provided without warranty of any kind. 
-In case of bugs please report them [here](https://github.com/muntonialessandro/SplitAndMill/issues).
+In case of bugs please report them [here](https://github.com/cg3hci/SplitAndMill/issues).
 
 ## License
 [GPL3](https://www.gnu.org/licenses/gpl-3.0.html) licensed
