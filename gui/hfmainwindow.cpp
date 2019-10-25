@@ -607,12 +607,12 @@ void HFMainWindow::on_actionHome_Page_triggered()
 
 void HFMainWindow::on_actionSource_Code_triggered()
 {
-	QDesktopServices::openUrl(QUrl("https://github.com/muntonialessandro/SplitAndMill"));
+    QDesktopServices::openUrl(QUrl("https://github.com/cg3hci/SplitAndMill"));
 }
 
 void HFMainWindow::on_actionReport_Bug_triggered()
 {
-	QDesktopServices::openUrl(QUrl("https://github.com/muntonialessandro/SplitAndMill/issues"));
+    QDesktopServices::openUrl(QUrl("https://github.com/cg3hci/SplitAndMill/issues"));
 }
 
 void HFMainWindow::on_loadToolButton_clicked()
