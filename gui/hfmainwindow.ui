@@ -99,7 +99,7 @@
     <addaction name="actionHome_Page"/>
     <addaction name="separator"/>
     <addaction name="actionSource_Code"/>
-    <addaction name="actionReport_a_Bug"/>
+    <addaction name="actionReport_Bug"/>
    </widget>
    <addaction name="menuFile_2"/>
    <addaction name="menuFile"/>
@@ -675,7 +675,7 @@
     <string>Source Code</string>
    </property>
   </action>
-  <action name="actionReport_a_Bug">
+  <action name="actionReport_Bug">
    <property name="text">
     <string>Report Bug</string>
    </property>

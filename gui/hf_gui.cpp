@@ -294,7 +294,7 @@ bool HFGui::saveDecomposition()
 	if (dir != "") {
 		uint i = 0;
 		for (const cg3::DrawableDcel& b : hfDecomposition){
-			b.saveOnObj(dir + "/b" + std::to_string(i++) + ".obj", false);
+			b.saveOnObj(dir + "/b" + std::to_string(i++) + ".obj");
 		}
 		return true;
 	}
@@ -357,7 +357,7 @@ void HFGui::enableManualRotation(bool b)
 		mw.pushDrawableObject(&rotatableMesh, "Rot");
 	}
 	else {
-		if (mw.containsDrawableObject(&rotatableMesh)){ //manage reset button
+		if (mw.containsDrawableObject(&rotatableMesh)) { //manage reset button
 			Eigen::Matrix3d rot = rotatableMesh.rotationMatrix();
 			addAction(UserAction(mesh, rot, actualRotationMatrix));
 			actualRotationMatrix *= rot;

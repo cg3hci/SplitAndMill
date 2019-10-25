@@ -426,7 +426,7 @@ void HFMainWindow::on_actionLoad_Mesh_triggered()
 		setRotationButton(b);
 		setLoadedButtons(b);
 		fileSAM = "";
-		setSaved(false);
+		setSaved(!b);
 	}
 }
 
