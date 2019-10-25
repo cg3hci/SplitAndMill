@@ -14,8 +14,8 @@ Our primary purpose is to generate portions respecting the properties allowing t
 We show that a manual decomposition is competitive with the automatic partitioning when the user is skilled enough.
 We, thus, think that our tool can be beneficial for the practitioners in the field, and we release it as free software.
 
-\[[Paper]()\]
-\[[Web Site]()\]
+\[[Paper](http://vcg.isti.cnr.it/~muntoni/data/split_and_mill.pdf)\]
+\[[Web Site](http://vcg.isti.cnr.it/~muntoni/split_and_mill.php)\]
 
 
 ## Source Code
