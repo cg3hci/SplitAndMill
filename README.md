@@ -6,11 +6,17 @@
 ![alt text](misc/teaser.png)
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/f3_Ffuv6u2U/0.jpg)](https://www.youtube.com/watch?v=f3_Ffuv6u2U)
- 
+
 ## Abstract
+
+We present here Split and Mill: an interactive system for the manual volume decomposition of free form shapes.
+Our primary purpose is to generate portions respecting the properties allowing to mill them with a 3-axis milling machine.
+We show that a manual decomposition is competitive with the automatic partitioning when the user is skilled enough.
+We, thus, think that our tool can be beneficial for the practitioners in the field, and we release it as free software.
 
 \[[Paper]()\]
 \[[Web Site]()\]
+
 
 ## Source Code
 Source code is hosted on this GitHub repository. The program is built and tested on Ubuntu 18.04 with GCC 7.3 and on Microsoft Windows 10 with MSVC2017.
@@ -29,6 +35,9 @@ qmake SplitAndMill.pro
 make
 ```
 ### Windows
+
+\[[Windows Binaries](bin/SplitAndMill_windows_dep.zip)\]
+
 Download [Qt](https://www.qt.io/download-qt-installer?hsCtaTracking=99d9dd4f-5681-48d2-b096-470725510d34%7C074ddad0-fdef-4e53-8aa8-5e8a876d6ab4) and install it.
 
 Download [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library and create an environment variable called EIGEN_PATH containing the path in which the library is placed.
