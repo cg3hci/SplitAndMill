@@ -14,4 +14,4 @@ install:
 
 script:
   - qmake SplitAndMill.pro
-  - make -j4
+  - make -j2
