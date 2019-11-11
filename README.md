@@ -1,5 +1,7 @@
 # Split And Mill: user assisted height-field block decomposition for fabrication
 
+[![Build Status](https://travis-ci.org/cg3hci/SplitAndMill.svg?branch=master)](https://travis-ci.org/cg3hci/SplitAndMill)
+
 [Alessandro Muntoni](http://vcg.isti.cnr.it/~muntoni/), [Lucio Davide Spano](http://people.unica.it/davidespano/), [Riccardo Scateni](http://people.unica.it/riccardoscateni/)<br/>
 *Smart Tools and Applications in Graphics (2019)*<br/>
 
