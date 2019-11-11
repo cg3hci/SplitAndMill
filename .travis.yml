@@ -1,0 +1,18 @@
+# Enable C++ support
+language: cpp
+
+os: linux
+dist: bionic
+sudo: required
+
+compiler:
+  - clang
+  - gcc
+
+install:
+  - sudo apt-get -y install qt5-default libboost-all-dev libcgal-dev libgmp-dev libqglviewer-dev-qt5 libeigen3-dev      
+
+script:
+  - cd SplitAndMill/
+  - qmake SplitAndMill.pro
+  - make
