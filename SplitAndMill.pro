@@ -17,38 +17,18 @@ CONFIG+=static
 FINAL_RELEASE {
     unix:!macx{
         QMAKE_CXXFLAGS_RELEASE -= -g -O2
-        QMAKE_CXXFLAGS += -Os -DNDEBUG
+        QMAKE_CXXFLAGS += -DNDEBUG
     }
 }
 
 # cg3lib works with c++11
 CONFIG += c++11
 
-# Cg3lib configuration. Available options:
-#
-#   CG3_ALL                 -- All the modules
-#
-#   CG3_CORE                -- Core of the library. Geometry primitives and utilities
-#   CG3_VIEWER              -- Module containing utilities for creating viewers (Qt and OpenGL)
-#
-#   CG3_DATA_STRUCTURES     -- Various data structure
-#   CG3_ALGORITHMS          -- Various algorithms
-#
-#   CG3_MESHES              -- Mesh data structures
-#
-#   CG3_CGAL                -- CGAL interface
-#   CG3_LIBIGL              -- libIGL interface
-#   CG3_CINOLIB             -- CinoLib interface
-#
-# Example:  CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_MESHES
-
+# Cg3lib configuration
 VCGLIB_PATH = $$PWD/vcglib/
 LIBIGL_PATH = $$PWD/libigl/
 CONFIG += CG3_CORE CG3_VIEWER CG3_DATA_STRUCTURES CG3_ALGORITHMS CG3_MESHES CG3_CGAL CG3_LIBIGL CG3_VCGLIB
 CONFIG += CG3_WIN_MSVC
-#CONFIG += CG3_STATIC
-
-# Include the chosen modules
 include (cg3lib/cg3.pri)
 message($$MODULES)
 

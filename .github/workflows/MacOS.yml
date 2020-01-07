@@ -17,9 +17,6 @@ jobs:
         echo '::set-env name=LD_LIBRARY_PATH::/usr/local/opt/qt/lib:${{env.LD_LIBRARY_PATH}}'
         echo '::set-env name=PKG_CONFIG_PATH::/usr/local/opt/qt/lib:${{env.PKG_CONFIG_PATH}}' 
         echo '::set-env name=QGLVIEWER_HOME::/usr/local/lib' #here is installed QGLViewer.framework
-        echo '::set-env name=LIBIGL_HOME::'$GITHUB_WORKSPACE'/../libigl'
-        echo '::set-env name=VCGLIB_HOME::'$GITHUB_WORKSPACE'/../vcglib'
-        echo '::set-env name=CINOLIB_HOME::'$GITHUB_WORKSPACE'/../cinolib'
     - name: installing dependencies
       run: |
         brew install qt cgal llvm
@@ -30,11 +27,6 @@ jobs:
         qmake
         make 
         make install            
-        cd ..
-        cd ..
-        git clone --recursive https://github.com/libigl/libigl
-        git clone --depth=1 --branch=devel https://github.com/cnr-isti-vclab/vcglib.git
-        git clone https://github.com/mlivesu/cinolib.git
     - name: compiling SplitAndMill
       run: |
         qmake SplitAndMill.pro
