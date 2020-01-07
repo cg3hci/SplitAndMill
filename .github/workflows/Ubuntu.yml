@@ -1,0 +1,30 @@
+name: Ubuntu
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setting env variables
+      shell: bash
+      run: |
+        echo '::set-env name=LIBIGL_HOME::'$GITHUB_WORKSPACE'/../libigl'
+        echo '::set-env name=VCGLIB_HOME::'$GITHUB_WORKSPACE'/../vcglib'
+        echo '::set-env name=CINOLIB_HOME::'$GITHUB_WORKSPACE'/../cinolib'
+    - name: installing dependencies
+      run: |
+        sudo apt -y update
+        sudo apt -y install qt5-default libboost-all-dev libcgal-dev libgmp-dev libqglviewer-dev-qt5 libeigen3-dev
+        cd ..
+        git clone --recursive https://github.com/libigl/libigl
+        git clone --depth=1 --branch=devel https://github.com/cnr-isti-vclab/vcglib.git
+        git clone https://github.com/mlivesu/cinolib.git
+    - name: compiling SplitAndMill
+      run: |
+        qmake SplitAndMill.pro
+        make -j4
+      
