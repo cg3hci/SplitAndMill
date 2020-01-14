@@ -294,7 +294,8 @@ bool HFGui::saveDecomposition()
 	if (dir != "") {
 		uint i = 0;
 		for (const cg3::DrawableDcel& b : hfDecomposition){
-			b.saveOnObj(dir + "/b" + std::to_string(i++) + ".obj");
+			cg3::io::FileMeshMode fm(cg3::io::POLYGON_MESH, true, false, false, true);
+			b.saveOnPly(dir + "/b" + std::to_string(i++) + ".ply", true, fm);
 		}
 		return true;
 	}
