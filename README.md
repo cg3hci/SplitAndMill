@@ -20,7 +20,7 @@ We, thus, think that our tool can be beneficial for the practitioners in the fie
 
 \[[Paper](http://vcg.isti.cnr.it/~muntoni/data/split_and_mill.pdf)\]
 \[[Web Site](http://vcg.isti.cnr.it/~muntoni/split_and_mill.php)\]
-
+\[[Results](http://vcg.isti.cnr.it/~muntoni/data/SplitAndMillResults.zip)\]
 
 ## Source Code
 Source code is hosted on this GitHub repository. The program is built and tested on Ubuntu 18.04 with GCC 7.3 and on Microsoft Windows 10 with MSVC2017.
