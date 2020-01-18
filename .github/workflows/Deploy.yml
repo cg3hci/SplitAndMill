@@ -1,0 +1,28 @@
+name: Deploy
+
+on: 
+  [push, pull_request]
+  #schedule:
+  #  - cron:  '0 0 1 * *' #every first day of the month at midnight
+
+jobs:
+  ubuntu_deploy:
+    runs-on: ubuntu-16.04 #in order to deploy, need to use oldest supported version
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout submodules
+      shell: bash
+      run: |
+        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+        git submodule sync --recursive
+        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+    - name: installing dependencies
+      shell: bash
+      run: |
+        sudo apt -y update
+        sudo apt -y install qt5-default libboost-all-dev libcgal-dev libgmp-dev libqglviewer-dev libeigen3-dev
+    - name: compiling SplitAndMill
+      run: |
+        qmake SplitAndMill.pro
+        make -j4
