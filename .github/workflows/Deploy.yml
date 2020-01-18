@@ -30,7 +30,7 @@ jobs:
       run: |
         cd deploy/
         sh linux_deploy.sh
-        mv *.AppImage ../SplitAndMill-linux.AppImage
+        mv ../release/*.AppImage ../SplitAndMill-linux.AppImage
     - name: Uploading SplitAndMill Portable
       uses: actions/upload-artifact@v1
       with:
@@ -75,7 +75,7 @@ jobs:
         name: split_and_mill_linux_appimage
     - name: Renaming AppImage
       run: |
-        mv split_and_mill_linux_appimage/*.AppImage split_and_mill_linux_appimage/SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
+        mv split_and_mill_linux_appimage/SplitAndMill-linux.AppImage split_and_mill_linux_appimage/SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
     - name: Uploading ReleaseLinuxPortable
       id: upload-release-linux-portable
       uses: actions/upload-release-asset@v1.0.1
