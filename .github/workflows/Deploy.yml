@@ -1,9 +1,9 @@
 name: Deploy
 
 on: 
-  [push, pull_request]
-  #schedule:
-  #  - cron:  '0 0 1 * *' #every first day of the month at midnight
+  #[push, pull_request]
+  schedule:
+    - cron:  '0 0 1 1 *' #every first day of the year at midnight
 
 jobs:
   ubuntu_deploy:
