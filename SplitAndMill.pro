@@ -21,6 +21,8 @@ FINAL_RELEASE {
     }
 }
 
+DESTDIR = release
+
 # cg3lib works with c++11
 CONFIG += c++11
 

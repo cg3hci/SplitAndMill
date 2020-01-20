@@ -1,0 +1,114 @@
+name: Deploy
+
+on: 
+  [push, pull_request]
+  #schedule:
+  #  - cron:  '0 0 1 * *' #every first day of the month at midnight
+
+jobs:
+  ubuntu_deploy:
+    runs-on: ubuntu-16.04 #in order to deploy, need to use oldest supported version
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout submodules
+      shell: bash
+      run: |
+        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+        git submodule sync --recursive
+        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+    - name: Installing dependencies
+      shell: bash
+      run: |
+        sudo apt -y update
+        sudo apt -y install qt5-default libboost-all-dev libcgal-dev libgmp-dev libqglviewer-dev libeigen3-dev
+    - name: Compiling SplitAndMill
+      run: |
+        qmake SplitAndMill.pro
+        make -j4
+    - name: Deploying
+      run: |
+        cd deploy/
+        sh linux_deploy.sh
+        mv ../release/*.AppImage ../SplitAndMill-linux.AppImage
+    - name: Uploading SplitAndMill Portable
+      uses: actions/upload-artifact@v1
+      with:
+        name: split_and_mill_portable_linux
+        path: release/
+    - name: Uploading SplitAndMill AppImage
+      uses: actions/upload-artifact@v1
+      with:
+        name: split_and_mill_linux_appimage
+        path: SplitAndMill-linux.AppImage
+
+  create_release:
+    name: Creating Release
+    needs: [ubuntu_deploy]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2 ####TODO - remove this. It is here just for the windows bin
+    - name: Setting env variables
+      id: envs
+      run: |
+        echo ::set-output name=date::"$(date +%Y.%m)"
+    - name: Publishing Release 
+      id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      with:
+        tag_name: SplitAndMill-${{steps.envs.outputs.date}}
+        release_name: SplitAndMill-${{steps.envs.outputs.date}}
+        draft: false
+        prerelease: false
+    
+    - name: Downloading Linux ZIP
+      uses: actions/download-artifact@v1
+      with:
+        name: split_and_mill_portable_linux
+    - name: Creating SplitAndMill Linux Archive
+      run: |
+        zip -r SplitAndMill-${{steps.envs.outputs.date}}-linux.zip split_and_mill_portable_linux/
+    - name: Downloading Linux AppImage
+      uses: actions/download-artifact@v1
+      with:
+        name: split_and_mill_linux_appimage
+    - name: Renaming AppImage
+      run: |
+        mv split_and_mill_linux_appimage/SplitAndMill-linux.AppImage split_and_mill_linux_appimage/SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
+    - name: Uploading ReleaseLinuxPortable
+      id: upload-release-linux-portable
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: SplitAndMill-${{steps.envs.outputs.date}}-linux.zip
+        asset_name: SplitAndMill-${{steps.envs.outputs.date}}-linux.zip
+        asset_content_type: SplitAndMill Portable for Linux
+    - name: Uploading ReleaseLinuxAppImage
+      id: upload-release-linux-appimage
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: split_and_mill_linux_appimage/SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
+        asset_name: SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
+        asset_content_type: SplitAndMill AppImage for Linux
+    #TODO: compile and deploy also for Mac and Windows
+    #temporary: just uploading the zip for windows inside bin 
+    - name: Renaming Zip Windows
+      run: |
+        mv bin/SplitAndMill_windows_dep.zip bin/SplitAndMill-${{steps.envs.outputs.date}}-windows.zip
+    - name: Uploading ReleaseWindowsPortable
+      id: upload-release-windows-portable
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: bin/SplitAndMill-${{steps.envs.outputs.date}}-windows.zip
+        asset_name: SplitAndMill-${{steps.envs.outputs.date}}-windows.zip
+        asset_content_type: SplitAndMill Portable for Windows

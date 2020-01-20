@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SplitAndMill
+Comment=Editor for decomposing meshes for fabrication
+Exec=SplitAndMill
+Icon=split_and_mill
+Terminal=false
+Categories=Graphics;3DGraphics;Viewer;Qt;
+
