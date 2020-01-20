@@ -96,3 +96,18 @@ jobs:
         asset_path: split_and_mill_linux_appimage/SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
         asset_name: SplitAndMill-${{steps.envs.outputs.date}}-linux.AppImage
         asset_content_type: SplitAndMill AppImage for Linux
+    #TODO: compile and deploy also for Mac and Windows
+    #temporary: just uploading the zip for windows inside bin 
+    - name: Renaming Zip Windows
+      run: |
+        mv bin/SplitAndMill_windows_dep.zip bin/SplitAndMill-${{steps.envs.outputs.date}}-windows.zip
+    - name: Uploading ReleaseWindowsPortable
+      id: upload-release-windows-portable
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: bin/SplitAndMill-${{steps.envs.outputs.date}}-windows.zip
+        asset_name: SplitAndMill-${{steps.envs.outputs.date}}-windows.zip
+        asset_content_type: SplitAndMill Portable for Windows
