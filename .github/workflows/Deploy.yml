@@ -47,6 +47,7 @@ jobs:
     needs: [ubuntu_deploy]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2 ####TODO - remove this. It is here just for the windows bin
     - name: Setting env variables
       id: envs
       run: |
